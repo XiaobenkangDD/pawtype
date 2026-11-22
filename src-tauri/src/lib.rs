@@ -235,13 +235,28 @@ fn is_accessibility_trusted() -> bool {
 }
 
 #[tauri::command]
+fn has_listen_event_access() -> bool {
+    input_hook::has_listen_event_access()
+}
+
+#[tauri::command]
 fn open_accessibility_settings() {
     input_hook::open_accessibility_settings();
 }
 
 #[tauri::command]
+fn open_input_monitoring_settings() {
+    input_hook::open_input_monitoring_settings();
+}
+
+#[tauri::command]
 fn prompt_accessibility_permission() -> bool {
     input_hook::prompt_accessibility_permission()
+}
+
+#[tauri::command]
+fn prompt_listen_event_access() -> bool {
+    input_hook::request_listen_event_access()
 }
 
 pub fn apply_breed_and_save(app: &AppHandle, breed: &str) {
@@ -671,8 +686,11 @@ pub fn run() {
             open_release_page,
             quit_app,
             is_accessibility_trusted,
+            has_listen_event_access,
             open_accessibility_settings,
+            open_input_monitoring_settings,
             prompt_accessibility_permission,
+            prompt_listen_event_access,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PawType");

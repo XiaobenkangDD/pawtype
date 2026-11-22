@@ -6,11 +6,11 @@
 
 ## 📥 下载
 
-最新版 **[v0.1.1](https://github.com/XiaobenkangDD/pawtype/releases/tag/v0.1.1)**：
+最新版 **[v0.1.2](https://github.com/XiaobenkangDD/pawtype/releases/tag/v0.1.2)**：
 
-- Windows 安装包：[`PawType-0.1.1-x64-setup.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.1/PawType-0.1.1-x64-setup.exe)
-- Windows 绿色版：[`PawType-v0.1.1-windows-x64.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.1/PawType-v0.1.1-windows-x64.exe)
-- macOS Universal：[`PawType-v0.1.1-macos-universal.dmg`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.1/PawType-v0.1.1-macos-universal.dmg)
+- Windows 安装包：[`PawType-0.1.2-x64-setup.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.2/PawType-0.1.2-x64-setup.exe)
+- Windows 绿色版：[`PawType-v0.1.2-windows-x64.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.2/PawType-v0.1.2-windows-x64.exe)
+- macOS Universal：[`PawType-v0.1.2-macos-universal.dmg`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.2/PawType-v0.1.2-macos-universal.dmg)
 
 更多文件见 [Releases](https://github.com/XiaobenkangDD/pawtype/releases)。
 

@@ -16,17 +16,18 @@
     </div>
 
     <div id="ax-guide" class="panel-card hidden" role="dialog" aria-labelledby="ax-guide-title">
-      <div class="panel-title" id="ax-guide-title">开启辅助功能权限</div>
+      <div class="panel-title" id="ax-guide-title">需要两处系统权限</div>
       <p class="panel-text">
-        PawType 需要「辅助功能」权限才能监听全局键盘/鼠标，让小猫跟着你敲键互动。
+        新版 macOS 上，PawType 要同时开启「辅助功能」和「输入监控」，小猫才会跟着键盘动。
       </p>
       <ol class="panel-steps">
-        <li>点击下方「打开系统设置」</li>
-        <li>在列表中找到并打开 <strong>PawType</strong></li>
-        <li>回到桌面，敲几下键盘验证</li>
+        <li>打开 <strong>辅助功能</strong>，添加并开启 <strong>PawType</strong></li>
+        <li>打开 <strong>输入监控</strong>，添加并开启 <strong>PawType</strong>（常被漏掉）</li>
+        <li>完全退出后重新打开 App，再敲键盘验证</li>
       </ol>
       <div class="panel-actions">
-        <button type="button" class="panel-btn" id="btn-ax-open">打开系统设置</button>
+        <button type="button" class="panel-btn" id="btn-ax-open">打开辅助功能</button>
+        <button type="button" class="panel-btn" id="btn-input-monitor-open">打开输入监控</button>
         <button type="button" class="panel-btn secondary" id="btn-ax-later">稍后</button>
       </div>
     </div>
@@ -129,7 +130,7 @@
       </button>
       <button class="menu-item" data-action="check-update" id="btn-check-update">
         <span>检查更新</span>
-        <span class="menu-hint" id="update-hint">v0.1.1</span>
+        <span class="menu-hint" id="update-hint">v0.1.2</span>
       </button>
       <button class="menu-item" data-action="sponsor">
         <span>赞助作者（微信）</span>

@@ -345,6 +345,9 @@ pub mod macos_hook {
         fn CGMainDisplayID() -> CGDirectDisplayID;
         fn CGDisplayBounds(display: CGDirectDisplayID) -> CGRect;
         fn CGEventCreate(source: *const c_void) -> CGEventRef;
+        // macOS 10.15+: required for keyboard CGEventTap (Input Monitoring privacy)
+        fn CGPreflightListenEventAccess() -> bool;
+        fn CGRequestListenEventAccess() -> bool;
     }
 
     #[link(name = "CoreFoundation", kind = "framework")]
@@ -626,10 +629,28 @@ pub mod macos_hook {
         event
     }
 
+    pub fn has_listen_event_access() -> bool {
+        unsafe { CGPreflightListenEventAccess() }
+    }
+
+    pub fn request_listen_event_access() -> bool {
+        unsafe { CGRequestListenEventAccess() }
+    }
+
     pub fn run_macos_hook_loop() {
-        // Trigger native macOS Accessibility prompt once if needed, then poll cleanly until granted (no restart needed!)
+        // 1) Accessibility (AX) — traditional CGEventTap gate
         if !request_accessibility_permission_once() {
             while !unsafe { AXIsProcessTrusted() } {
+                std::thread::sleep(Duration::from_secs(2));
+            }
+        }
+
+        // 2) Input Monitoring (Listen Event Access) — required on modern macOS
+        //    for keyboard taps; Accessibility alone is not enough.
+        if !unsafe { CGPreflightListenEventAccess() } {
+            let _ = unsafe { CGRequestListenEventAccess() };
+            while !unsafe { CGPreflightListenEventAccess() } {
+                let _ = unsafe { CGRequestListenEventAccess() };
                 std::thread::sleep(Duration::from_secs(2));
             }
         }
@@ -697,6 +718,18 @@ pub mod macos_hook {
         }
     }
 
+    pub fn open_input_monitoring_settings() {
+        let candidates = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
+            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_ListenEvent",
+        ];
+        for url in candidates {
+            if std::process::Command::new("open").arg(url).spawn().is_ok() {
+                break;
+            }
+        }
+    }
+
     pub fn prompt_accessibility_permission() -> bool {
         request_accessibility_permission_once()
     }
@@ -713,10 +746,39 @@ pub fn is_accessibility_trusted() -> bool {
     }
 }
 
+pub fn has_listen_event_access() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        macos_hook::has_listen_event_access()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
+}
+
+pub fn request_listen_event_access() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        macos_hook::request_listen_event_access()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
+}
+
 pub fn open_accessibility_settings() {
     #[cfg(target_os = "macos")]
     {
         macos_hook::open_accessibility_settings();
+    }
+}
+
+pub fn open_input_monitoring_settings() {
+    #[cfg(target_os = "macos")]
+    {
+        macos_hook::open_input_monitoring_settings();
     }
 }
 

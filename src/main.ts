@@ -58,7 +58,7 @@ interface UpdateProgressEvent {
   info: UpdateInfo | null;
 }
 
-let appVersion = '0.1.1';
+let appVersion = '0.1.2';
 let latestUpdateInfo: UpdateInfo | null = null;
 let updateBusy = false;
 let dismissedVersion: string | null = null;
@@ -158,13 +158,17 @@ function openAxGuide(): void {
 }
 
 async function maybeShowAccessibilityGuide(): Promise<void> {
+  // On modern macOS, keyboard taps often also need Input Monitoring.
+  // Show the two-step guide once even if Accessibility alone looks granted.
   if (!isMac || settings.accessibilityGuideSeen) return;
   try {
+    openAxGuide();
     const trusted = await invoke<boolean>('is_accessibility_trusted');
     if (!trusted) {
-      openAxGuide();
       void invoke('prompt_accessibility_permission');
     }
+    // Explicitly request Input Monitoring (Listen Event Access) on modern macOS.
+    void invoke('prompt_listen_event_access');
   } catch (err) {
     console.error('Failed to check accessibility permission:', err);
   }
@@ -482,6 +486,10 @@ async function bootstrap(): Promise<void> {
     e.stopPropagation();
     void invoke('open_accessibility_settings');
     void invoke('prompt_accessibility_permission');
+  });
+  document.getElementById('btn-input-monitor-open')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    void invoke('open_input_monitoring_settings');
   });
   document.getElementById('btn-ax-later')?.addEventListener('click', (e) => {
     e.stopPropagation();
