@@ -2,7 +2,7 @@ import './style.css';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { KuroCatEngine, type KeyboardOrientation } from './catEngine';
+import { PawTypeEngine, type KeyboardOrientation } from './catEngine';
 import { catAudio } from './audio';
 import { DEFAULT_BUILTIN_CATS, type CatSkinConfig } from './catSkins';
 import type { KeyboardLayoutId } from './keyboardLayout';
@@ -92,7 +92,7 @@ const updateToastTextEl = document.getElementById('update-toast-text') as HTMLSp
 const btnToastInstallEl = document.getElementById('btn-toast-install') as HTMLButtonElement;
 const btnToastOpenEl = document.getElementById('btn-toast-open') as HTMLButtonElement;
 const btnToastCloseEl = document.getElementById('btn-toast-close') as HTMLButtonElement;
-const engine = new KuroCatEngine(canvas);
+const engine = new PawTypeEngine(canvas);
 
 function renderBreedPills(): void {
   if (!breedPillsEl) return;
@@ -153,7 +153,7 @@ function syncMenuUI(): void {
   const headerEl = document.getElementById('menu-header');
   if (headerEl && activeCat) {
     const emoji = activeCat.emoji || '🐱';
-    headerEl.textContent = `${emoji} KuroCat ${activeCat.name}`;
+    headerEl.textContent = `${emoji} PawType ${activeCat.name}`;
     headerEl.style.color = activeCat.accentColor || '#c8f538';
   }
 
@@ -229,7 +229,7 @@ async function createDesktopShortcut(): Promise<void> {
       hint.textContent = '✓ 已创建';
       hint.classList.add('copied');
       setTimeout(() => {
-        hint.textContent = 'KuroCat';
+        hint.textContent = 'PawType';
         hint.classList.remove('copied');
       }, 1800);
     }
@@ -401,7 +401,7 @@ async function bootstrap(): Promise<void> {
     console.error('Failed to load settings or cats:', err);
   }
 
-  await listen<UpdateProgressEvent>('kuro-update-status', (ev) => {
+  await listen<UpdateProgressEvent>('paw-update-status', (ev) => {
     handleUpdateProgressEvent(ev.payload, false);
   });
 
@@ -412,7 +412,7 @@ async function bootstrap(): Promise<void> {
 
   btnToastOpenEl.addEventListener('click', (e) => {
     e.stopPropagation();
-    const url = latestUpdateInfo?.releaseUrl || 'https://github.com/qianyiai/kurocat/releases/latest';
+    const url = latestUpdateInfo?.releaseUrl || 'https://github.com/XiaobenkangDD/pawtype/releases/latest';
     void invoke('open_release_page', { url });
   });
 
@@ -454,19 +454,19 @@ async function bootstrap(): Promise<void> {
     });
   }
 
-  await listen<AppSettings>('kuro-settings', (ev) => {
+  await listen<AppSettings>('paw-settings', (ev) => {
     settings = ev.payload;
     syncMenuUI();
   });
 
-  await listen<CatSkinConfig[]>('kuro-cats', (ev) => {
+  await listen<CatSkinConfig[]>('paw-cats', (ev) => {
     if (Array.isArray(ev.payload) && ev.payload.length > 0) {
       catList = ev.payload;
       syncMenuUI();
     }
   });
 
-  await listen<InputEvent>('kuro-input', (ev) => {
+  await listen<InputEvent>('paw-input', (ev) => {
     const p = ev.payload;
     switch (p.kind) {
       case 'keyDown':
@@ -490,7 +490,7 @@ async function bootstrap(): Promise<void> {
     }
   });
 
-  await listen<WindowCursorInfo>('kuro-cursor', (ev) => {
+  await listen<WindowCursorInfo>('paw-cursor', (ev) => {
     const c = ev.payload;
     engine.onWindowCursor(c.relX, c.relY, c.overCat);
     canvas.classList.toggle('pet-hover', c.overCat && !settings.clickThroughLocked);

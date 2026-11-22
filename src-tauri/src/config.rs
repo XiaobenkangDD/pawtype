@@ -91,7 +91,7 @@ pub fn app_data_dir() -> PathBuf {
         let base = std::env::var("APPDATA")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("."));
-        base.join("kuro-cat-pet")
+        base.join("pawtype")
     }
     #[cfg(target_os = "macos")]
     {
@@ -100,14 +100,14 @@ pub fn app_data_dir() -> PathBuf {
             .unwrap_or_else(|_| PathBuf::from("."));
         home.join("Library")
             .join("Application Support")
-            .join("kuro-cat-pet")
+            .join("pawtype")
     }
     #[cfg(all(not(windows), not(target_os = "macos")))]
     {
         let home = std::env::var("HOME")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("."));
-        home.join(".config").join("kuro-cat-pet")
+        home.join(".config").join("pawtype")
     }
 }
 
@@ -153,8 +153,8 @@ pub fn set_windows_autostart(enabled: bool) -> Result<(), String> {
     }
 
     let subkey = to_wide("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
-    let value_name = to_wide("KuroCat");
-    let legacy_value_name = to_wide("KuroCatPet");
+    let value_name = to_wide("PawType");
+    let legacy_value_name = to_wide("PawType");
 
     unsafe {
         let mut hkey: HKEY = std::ptr::null_mut();
@@ -207,7 +207,7 @@ pub fn set_windows_autostart(enabled: bool) -> Result<(), String> {
 pub fn set_windows_autostart(enabled: bool) -> Result<(), String> {
     let home = std::env::var("HOME").map_err(|e| e.to_string())?;
     let agents_dir = PathBuf::from(home).join("Library").join("LaunchAgents");
-    let plist_path = agents_dir.join("com.kurocat.pet.plist");
+    let plist_path = agents_dir.join("com.xiaobenkangdd.pawtype.plist");
 
     if enabled {
         fs::create_dir_all(&agents_dir).map_err(|e| e.to_string())?;
@@ -221,7 +221,7 @@ pub fn set_windows_autostart(enabled: bool) -> Result<(), String> {
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.kurocat.pet</string>
+    <string>com.xiaobenkangdd.pawtype</string>
     <key>ProgramArguments</key>
     <array>
         <string>{}</string>
@@ -263,13 +263,13 @@ pub fn create_desktop_shortcut() -> Result<String, String> {
 
     let script = format!(
         "$desktop = [Environment]::GetFolderPath('Desktop'); \
-         $lnk = Join-Path $desktop 'KuroCat.lnk'; \
+         $lnk = Join-Path $desktop 'PawType.lnk'; \
          $ws = New-Object -ComObject WScript.Shell; \
          $s = $ws.CreateShortcut($lnk); \
          $s.TargetPath = '{exe}'; \
          $s.WorkingDirectory = '{wd}'; \
          $s.IconLocation = '{exe},0'; \
-         $s.Description = 'KuroCat Desktop Companion'; \
+         $s.Description = 'PawType Desktop Companion'; \
          $s.Save(); \
          Write-Output $lnk",
         exe = exe_str,

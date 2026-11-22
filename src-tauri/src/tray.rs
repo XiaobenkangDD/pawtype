@@ -107,7 +107,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
     let reset_pos = MenuItem::with_id(app, "reset_pos", "重置位置到右下角", true, None::<&str>)?;
     #[cfg(windows)]
     let desktop_shortcut =
-        MenuItem::with_id(app, "desktop_shortcut", "创建桌面快捷方式 (KuroCat)", true, None::<&str>)?;
+        MenuItem::with_id(app, "desktop_shortcut", "创建桌面快捷方式 (PawType)", true, None::<&str>)?;
     let check_update = MenuItem::with_id(
         app,
         "check_update",
@@ -115,7 +115,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
         true,
         None::<&str>,
     )?;
-    let quit = MenuItem::with_id(app, "quit", "退出 KuroCat", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "退出 PawType", true, None::<&str>)?;
 
     let sep1 = PredefinedMenuItem::separator(app)?;
     let sep2 = PredefinedMenuItem::separator(app)?;
@@ -167,9 +167,9 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
 
     let icon = Image::from_bytes(include_bytes!("../icons/tray-icon.png"))?;
 
-    TrayIconBuilder::with_id("kuro-tray")
+    TrayIconBuilder::with_id("paw-tray")
         .icon(icon)
-        .tooltip("KuroCat")
+        .tooltip("PawType")
         .menu(&menu)
         .show_menu_on_left_click(cfg!(target_os = "macos"))
         .on_tray_icon_event(|tray, event| {
@@ -207,7 +207,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                     let locked = s.click_through_locked;
                     crate::config::save_settings(&s);
                     let _ = click_through.set_checked(locked);
-                    let _ = app.emit("kuro-settings", s.clone());
+                    let _ = app.emit("paw-settings", s.clone());
                 }
                 "key_bubbles" => {
                     let mut s = state.settings.lock().unwrap();
@@ -215,7 +215,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                     let enabled = s.show_key_bubbles;
                     crate::config::save_settings(&s);
                     let _ = key_bubbles.set_checked(enabled);
-                    let _ = app.emit("kuro-settings", s.clone());
+                    let _ = app.emit("paw-settings", s.clone());
                 }
                 "sound_toggle" => {
                     let mut s = state.settings.lock().unwrap();
@@ -223,7 +223,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                     let enabled = s.sound_enabled;
                     crate::config::save_settings(&s);
                     let _ = sound_toggle.set_checked(enabled);
-                    let _ = app.emit("kuro-settings", s.clone());
+                    let _ = app.emit("paw-settings", s.clone());
                 }
                 "always_on_top" => {
                     let mut s = state.settings.lock().unwrap();
@@ -234,7 +234,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                     if let Some(win) = app.get_webview_window("main") {
                         let _ = win.set_always_on_top(on_top);
                     }
-                    let _ = app.emit("kuro-settings", s.clone());
+                    let _ = app.emit("paw-settings", s.clone());
                 }
                 "autostart" => {
                     let mut s = state.settings.lock().unwrap();
@@ -243,7 +243,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                         s.autostart = next;
                         crate::config::save_settings(&s);
                         let _ = autostart.set_checked(next);
-                        let _ = app.emit("kuro-settings", s.clone());
+                        let _ = app.emit("paw-settings", s.clone());
                     }
                 }
                 "mcp_toggle" => {
@@ -255,7 +255,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                         .store(enabled, std::sync::atomic::Ordering::Relaxed);
                     crate::config::save_settings(&s);
                     let _ = mcp_toggle.set_checked(enabled);
-                    let _ = app.emit("kuro-settings", s.clone());
+                    let _ = app.emit("paw-settings", s.clone());
                 }
                 "breed_black" => apply_breed_and_save(app, "black"),
                 "breed_ragdoll" => apply_breed_and_save(app, "ragdoll"),
@@ -282,7 +282,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                         let _ = win.show();
                     }
                     let _ = app_clone.emit(
-                        "kuro-update-status",
+                        "paw-update-status",
                         crate::updater::UpdateProgressEvent {
                             stage: "checking".to_string(),
                             message: "正在检查新版本...".to_string(),
@@ -297,7 +297,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                                 ("up_to_date", format!("已是最新版本 v{}", info.current_version))
                             };
                             let _ = app_clone.emit(
-                                "kuro-update-status",
+                                "paw-update-status",
                                 crate::updater::UpdateProgressEvent {
                                     stage: stage.to_string(),
                                     message: msg,
@@ -307,7 +307,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                         }
                         Err(err) => {
                             let _ = app_clone.emit(
-                                "kuro-update-status",
+                                "paw-update-status",
                                 crate::updater::UpdateProgressEvent {
                                     stage: "error".to_string(),
                                     message: err,

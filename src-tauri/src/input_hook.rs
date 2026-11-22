@@ -63,17 +63,17 @@ pub fn start_global_hooks(app: AppHandle) {
                     } else {
                         false
                     };
-                    let _ = app.emit("kuro-input", InputEvent::KeyDown { vk, scan, repeat });
+                    let _ = app.emit("paw-input", InputEvent::KeyDown { vk, scan, repeat });
                 }
                 RawHookMsg::KeyUp { vk, scan } => {
                     if (vk as usize) < 512 {
                         pressed[vk as usize] = false;
                     }
-                    let _ = app.emit("kuro-input", InputEvent::KeyUp { vk, scan });
+                    let _ = app.emit("paw-input", InputEvent::KeyUp { vk, scan });
                 }
                 RawHookMsg::MouseDown(btn) => {
                     let _ = app.emit(
-                        "kuro-input",
+                        "paw-input",
                         InputEvent::MouseDown {
                             button: btn.to_string(),
                         },
@@ -81,21 +81,21 @@ pub fn start_global_hooks(app: AppHandle) {
                 }
                 RawHookMsg::MouseUp(btn) => {
                     let _ = app.emit(
-                        "kuro-input",
+                        "paw-input",
                         InputEvent::MouseUp {
                             button: btn.to_string(),
                         },
                     );
                 }
                 RawHookMsg::MouseWheel(delta) => {
-                    let _ = app.emit("kuro-input", InputEvent::MouseWheel { delta });
+                    let _ = app.emit("paw-input", InputEvent::MouseWheel { delta });
                 }
                 RawHookMsg::MouseMove { x, y } => {
                     let now = Instant::now();
                     if now.duration_since(last_mouse_emit) >= Duration::from_millis(16) {
                         last_mouse_emit = now;
                         let (nx, ny) = normalize_screen_point(x, y);
-                        let _ = app.emit("kuro-input", InputEvent::MouseMove { x, y, nx, ny });
+                        let _ = app.emit("paw-input", InputEvent::MouseMove { x, y, nx, ny });
                     }
                 }
             }

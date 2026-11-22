@@ -103,10 +103,10 @@ fn get_mcp_config(state: State<'_, AppState>) -> String {
     let port = state.settings.lock().unwrap().mcp_port;
     let exe = std::env::current_exe()
         .map(|p| p.to_string_lossy().to_string())
-        .unwrap_or_else(|_| "KuroCat.exe".to_string());
+        .unwrap_or_else(|_| "PawType.exe".to_string());
     serde_json::to_string_pretty(&serde_json::json!({
         "mcpServers": {
-            "kurocat": {
+            "pawtype": {
                 "command": exe,
                 "args": ["--mcp"],
                 "url": format!("http://127.0.0.1:{}/mcp", port)
@@ -159,7 +159,7 @@ fn update_settings(app: AppHandle, state: State<'_, AppState>, mut patch: AppSet
         *s = patch.clone();
         save_settings(&s);
     }
-    let _ = app.emit("kuro-settings", patch.clone());
+    let _ = app.emit("paw-settings", patch.clone());
     patch
 }
 
@@ -243,7 +243,7 @@ pub fn apply_breed_and_save(app: &AppHandle, breed: &str) {
         save_settings(&s);
         s.clone()
     };
-    let _ = app.emit("kuro-settings", updated);
+    let _ = app.emit("paw-settings", updated);
 }
 
 pub fn reload_and_emit_all(app: &AppHandle) {
@@ -276,8 +276,8 @@ pub fn reload_and_emit_all(app: &AppHandle) {
         }
     }
 
-    let _ = app.emit("kuro-cats", cats);
-    let _ = app.emit("kuro-settings", disk_settings);
+    let _ = app.emit("paw-cats", cats);
+    let _ = app.emit("paw-settings", disk_settings);
 }
 
 fn file_mtime(path: &std::path::Path) -> Option<SystemTime> {
@@ -321,7 +321,7 @@ pub fn apply_scale_and_save(app: &AppHandle, scale: f64) {
         save_settings(&s);
         s.clone()
     };
-    let _ = app.emit("kuro-settings", updated);
+    let _ = app.emit("paw-settings", updated);
 }
 
 pub fn apply_keyboard_layout_and_save(app: &AppHandle, layout: &str) {
@@ -341,7 +341,7 @@ pub fn apply_keyboard_layout_and_save(app: &AppHandle, layout: &str) {
         save_settings(&s);
         s.clone()
     };
-    let _ = app.emit("kuro-settings", updated);
+    let _ = app.emit("paw-settings", updated);
 }
 
 pub fn apply_keyboard_orientation_and_save(app: &AppHandle, orientation: &str) {
@@ -353,7 +353,7 @@ pub fn apply_keyboard_orientation_and_save(app: &AppHandle, orientation: &str) {
         save_settings(&s);
         s.clone()
     };
-    let _ = app.emit("kuro-settings", updated);
+    let _ = app.emit("paw-settings", updated);
 }
 
 pub fn reset_window_position(app: &AppHandle) {
@@ -525,7 +525,7 @@ fn start_hit_test_loop(
             if (cx, cy) != last_cursor {
                 last_cursor = (cx, cy);
                 let _ = app.emit(
-                    "kuro-cursor",
+                    "paw-cursor",
                     WindowCursorInfo {
                         rel_x: pet_rx,
                         rel_y: pet_ry,
@@ -613,25 +613,25 @@ pub fn run() {
                     let keys: &[u32] = &[0x46, 0x53, 0x41, 0x45, 0x20, 0xA0, 0x4B];
                     for &vk in keys {
                         let _ = demo_handle.emit(
-                            "kuro-input",
+                            "paw-input",
                             serde_json::json!({ "kind": "keyDown", "vk": vk, "scan": 0, "repeat": false }),
                         );
                         std::thread::sleep(Duration::from_millis(100));
                         let _ = demo_handle.emit(
-                            "kuro-input",
+                            "paw-input",
                             serde_json::json!({ "kind": "keyUp", "vk": vk, "scan": 0 }),
                         );
                     }
                     let _ = demo_handle.emit(
-                        "kuro-input",
+                        "paw-input",
                         serde_json::json!({ "kind": "mouseMove", "x": 400, "y": 400, "nx": 0.25, "ny": 0.4 }),
                     );
                     let _ = demo_handle.emit(
-                        "kuro-input",
+                        "paw-input",
                         serde_json::json!({ "kind": "mouseDown", "button": "left" }),
                     );
                     let _ = demo_handle.emit(
-                        "kuro-input",
+                        "paw-input",
                         serde_json::json!({ "kind": "keyDown", "vk": 0x4B, "scan": 0, "repeat": false }),
                     );
                 });
@@ -657,5 +657,5 @@ pub fn run() {
             quit_app,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running KuroCat");
+        .expect("error while running PawType");
 }
