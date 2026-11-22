@@ -63,6 +63,8 @@ pub struct AppSettings {
     pub keyboard_layout: String,
     #[serde(default = "default_keyboard_orientation")]
     pub keyboard_orientation: String,
+    #[serde(default)]
+    pub accessibility_guide_seen: bool,
 }
 
 impl Default for AppSettings {
@@ -81,6 +83,7 @@ impl Default for AppSettings {
             mcp_port: default_mcp_port(),
             keyboard_layout: default_keyboard_layout(),
             keyboard_orientation: default_keyboard_orientation(),
+            accessibility_guide_seen: false,
         }
     }
 }

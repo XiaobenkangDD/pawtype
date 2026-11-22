@@ -679,4 +679,54 @@ pub mod macos_hook {
             std::thread::sleep(Duration::from_secs(1));
         }
     }
+
+    pub fn is_process_trusted() -> bool {
+        unsafe { AXIsProcessTrusted() }
+    }
+
+    pub fn open_accessibility_settings() {
+        // Works on recent macOS; falls back silently if the URL scheme changes.
+        let candidates = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility",
+        ];
+        for url in candidates {
+            if std::process::Command::new("open").arg(url).spawn().is_ok() {
+                break;
+            }
+        }
+    }
+
+    pub fn prompt_accessibility_permission() -> bool {
+        request_accessibility_permission_once()
+    }
+}
+
+pub fn is_accessibility_trusted() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        macos_hook::is_process_trusted()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
+}
+
+pub fn open_accessibility_settings() {
+    #[cfg(target_os = "macos")]
+    {
+        macos_hook::open_accessibility_settings();
+    }
+}
+
+pub fn prompt_accessibility_permission() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        macos_hook::prompt_accessibility_permission()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
 }

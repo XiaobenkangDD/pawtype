@@ -115,6 +115,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
         true,
         None::<&str>,
     )?;
+    let sponsor = MenuItem::with_id(app, "sponsor", "赞助作者（微信）", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "退出 PawType", true, None::<&str>)?;
 
     let sep1 = PredefinedMenuItem::separator(app)?;
@@ -138,6 +139,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
             &autostart,
             &mcp_toggle,
             &check_update,
+            &sponsor,
             &sep2,
             &quit,
         ],
@@ -160,6 +162,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
             &autostart,
             &mcp_toggle,
             &check_update,
+            &sponsor,
             &sep2,
             &quit,
         ],
@@ -318,6 +321,12 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                     });
                 }
                 "reset_pos" => reset_window_position(app),
+                "sponsor" => {
+                    if let Some(win) = app.get_webview_window("main") {
+                        let _ = win.show();
+                    }
+                    let _ = app.emit("paw-open-sponsor", ());
+                }
                 "quit" => {
                     app.exit(0);
                 }

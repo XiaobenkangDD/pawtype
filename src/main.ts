@@ -21,6 +21,7 @@ interface AppSettings {
   mcpPort: number;
   keyboardLayout: KeyboardLayoutId;
   keyboardOrientation: KeyboardOrientation;
+  accessibilityGuideSeen: boolean;
 }
 
 type InputEvent =
@@ -57,12 +58,14 @@ interface UpdateProgressEvent {
   info: UpdateInfo | null;
 }
 
-let appVersion = '4.6.0';
+let appVersion = '0.1.0';
 let latestUpdateInfo: UpdateInfo | null = null;
 let updateBusy = false;
 let dismissedVersion: string | null = null;
 let toastAutoHideTimer: number | null = null;
 let sliderDragging = false;
+const isMac =
+  /Mac/i.test(navigator.platform) || /Macintosh/i.test(navigator.userAgent);
 
 let settings: AppSettings = {
   x: null,
@@ -78,6 +81,7 @@ let settings: AppSettings = {
   mcpPort: 27420,
   keyboardLayout: '65',
   keyboardOrientation: 'cat',
+  accessibilityGuideSeen: false,
 };
 
 let catList: CatSkinConfig[] = [...DEFAULT_BUILTIN_CATS];
@@ -93,6 +97,78 @@ const btnToastInstallEl = document.getElementById('btn-toast-install') as HTMLBu
 const btnToastOpenEl = document.getElementById('btn-toast-open') as HTMLButtonElement;
 const btnToastCloseEl = document.getElementById('btn-toast-close') as HTMLButtonElement;
 const engine = new PawTypeEngine(canvas);
+const axGuideEl = document.getElementById('ax-guide') as HTMLDivElement;
+const sponsorPanelEl = document.getElementById('sponsor-panel') as HTMLDivElement;
+const sponsorQrEl = document.getElementById('sponsor-qr') as HTMLImageElement;
+const sponsorHintEl = document.getElementById('sponsor-hint') as HTMLParagraphElement;
+
+function setOverlayOpen(open: boolean): void {
+  void invoke('set_menu_open', { open });
+}
+
+function closeSponsorPanel(): void {
+  if (!sponsorPanelEl.classList.contains('hidden')) {
+    sponsorPanelEl.classList.add('hidden');
+    if (axGuideEl.classList.contains('hidden') && menuEl.classList.contains('hidden')) {
+      setOverlayOpen(false);
+    }
+  }
+}
+
+function openSponsorPanel(): void {
+  closeContextMenu();
+  axGuideEl.classList.add('hidden');
+  if (sponsorQrEl) {
+    sponsorQrEl.classList.remove('is-missing');
+    sponsorQrEl.onerror = () => {
+      sponsorQrEl.classList.add('is-missing');
+      if (sponsorHintEl) {
+        sponsorHintEl.textContent = '收款码尚未放入 public/sponsor-wechat.png';
+      }
+    };
+    sponsorQrEl.onload = () => {
+      sponsorQrEl.classList.remove('is-missing');
+      if (sponsorHintEl) {
+        sponsorHintEl.textContent = '微信扫一扫上方二维码';
+      }
+    };
+    sponsorQrEl.src = `/sponsor-wechat.png?t=${Date.now()}`;
+  }
+  sponsorPanelEl.classList.remove('hidden');
+  setOverlayOpen(true);
+}
+
+function closeAxGuide(markSeen: boolean): void {
+  if (!axGuideEl.classList.contains('hidden')) {
+    axGuideEl.classList.add('hidden');
+    if (sponsorPanelEl.classList.contains('hidden') && menuEl.classList.contains('hidden')) {
+      setOverlayOpen(false);
+    }
+  }
+  if (markSeen && !settings.accessibilityGuideSeen) {
+    void applySettingsPatch({ accessibilityGuideSeen: true });
+  }
+}
+
+function openAxGuide(): void {
+  closeContextMenu();
+  closeSponsorPanel();
+  axGuideEl.classList.remove('hidden');
+  setOverlayOpen(true);
+}
+
+async function maybeShowAccessibilityGuide(): Promise<void> {
+  if (!isMac || settings.accessibilityGuideSeen) return;
+  try {
+    const trusted = await invoke<boolean>('is_accessibility_trusted');
+    if (!trusted) {
+      openAxGuide();
+      void invoke('prompt_accessibility_permission');
+    }
+  } catch (err) {
+    console.error('Failed to check accessibility permission:', err);
+  }
+}
 
 function renderBreedPills(): void {
   if (!breedPillsEl) return;
@@ -377,7 +453,7 @@ async function bootstrap(): Promise<void> {
   engine.start();
 
   // Hide Windows-only desktop shortcut button on macOS
-  if (/Mac/i.test(navigator.platform) || /Macintosh/i.test(navigator.userAgent)) {
+  if (isMac) {
     const shortcutBtn = document.getElementById('btn-desktop-shortcut');
     if (shortcutBtn) shortcutBtn.style.display = 'none';
   }
@@ -397,9 +473,28 @@ async function bootstrap(): Promise<void> {
       setUpdateHint(`v${appVersion}`);
     }
     syncMenuUI();
+    await maybeShowAccessibilityGuide();
   } catch (err) {
     console.error('Failed to load settings or cats:', err);
   }
+
+  document.getElementById('btn-ax-open')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    void invoke('open_accessibility_settings');
+    void invoke('prompt_accessibility_permission');
+  });
+  document.getElementById('btn-ax-later')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeAxGuide(true);
+  });
+  document.getElementById('btn-sponsor-close')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeSponsorPanel();
+  });
+
+  await listen('paw-open-sponsor', () => {
+    openSponsorPanel();
+  });
 
   await listen<UpdateProgressEvent>('paw-update-status', (ev) => {
     handleUpdateProgressEvent(ev.payload, false);
@@ -522,7 +617,11 @@ async function bootstrap(): Promise<void> {
 
   window.addEventListener('blur', () => closeContextMenu());
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeContextMenu();
+    if (e.key === 'Escape') {
+      closeContextMenu();
+      closeSponsorPanel();
+      closeAxGuide(false);
+    }
   });
 
   menuEl.addEventListener('click', (e) => {
@@ -587,6 +686,9 @@ async function bootstrap(): Promise<void> {
         break;
       case 'check-update':
         void triggerManualUpdateCheck();
+        break;
+      case 'sponsor':
+        openSponsorPanel();
         break;
       case 'reset-pos':
         void invoke('reset_position');

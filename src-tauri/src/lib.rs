@@ -229,6 +229,21 @@ fn quit_app(app: AppHandle) {
     app.exit(0);
 }
 
+#[tauri::command]
+fn is_accessibility_trusted() -> bool {
+    input_hook::is_accessibility_trusted()
+}
+
+#[tauri::command]
+fn open_accessibility_settings() {
+    input_hook::open_accessibility_settings();
+}
+
+#[tauri::command]
+fn prompt_accessibility_permission() -> bool {
+    input_hook::prompt_accessibility_permission()
+}
+
 pub fn apply_breed_and_save(app: &AppHandle, breed: &str) {
     let clean = sanitize_cat_id(breed);
     let normalized = if cat_exists(&clean) {
@@ -655,6 +670,9 @@ pub fn run() {
             install_update,
             open_release_page,
             quit_app,
+            is_accessibility_trusted,
+            open_accessibility_settings,
+            prompt_accessibility_permission,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PawType");

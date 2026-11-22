@@ -15,6 +15,37 @@
       <button class="update-toast-close" id="btn-toast-close" type="button" title="稍后提醒">×</button>
     </div>
 
+    <div id="ax-guide" class="panel-card hidden" role="dialog" aria-labelledby="ax-guide-title">
+      <div class="panel-title" id="ax-guide-title">开启辅助功能权限</div>
+      <p class="panel-text">
+        PawType 需要「辅助功能」权限才能监听全局键盘/鼠标，让小猫跟着你敲键互动。
+      </p>
+      <ol class="panel-steps">
+        <li>点击下方「打开系统设置」</li>
+        <li>在列表中找到并打开 <strong>PawType</strong></li>
+        <li>回到桌面，敲几下键盘验证</li>
+      </ol>
+      <div class="panel-actions">
+        <button type="button" class="panel-btn" id="btn-ax-open">打开系统设置</button>
+        <button type="button" class="panel-btn secondary" id="btn-ax-later">稍后</button>
+      </div>
+    </div>
+
+    <div id="sponsor-panel" class="panel-card hidden" role="dialog" aria-labelledby="sponsor-title">
+      <div class="panel-title" id="sponsor-title">赞助 PawType</div>
+      <p class="panel-text">如果觉得好用，欢迎微信扫码支持作者 ☕</p>
+      <img
+        id="sponsor-qr"
+        class="sponsor-qr"
+        src="/sponsor-wechat.png"
+        alt="微信收款码"
+      />
+      <p class="panel-hint" id="sponsor-hint">微信扫一扫上方二维码</p>
+      <div class="panel-actions">
+        <button type="button" class="panel-btn secondary" id="btn-sponsor-close">关闭</button>
+      </div>
+    </div>
+
     <div id="context-menu" class="context-menu hidden">
       <div class="menu-header" id="menu-header">🐈‍⬛ PawType 小黑猫</div>
       <div class="menu-scale-row">
@@ -98,7 +129,11 @@
       </button>
       <button class="menu-item" data-action="check-update" id="btn-check-update">
         <span>检查更新</span>
-        <span class="menu-hint" id="update-hint">v4.6.0</span>
+        <span class="menu-hint" id="update-hint">v0.1.0</span>
+      </button>
+      <button class="menu-item" data-action="sponsor">
+        <span>赞助作者（微信）</span>
+        <span class="menu-hint">☕</span>
       </button>
       <button class="menu-item danger" data-action="quit">
         <span>退出 PawType</span>
