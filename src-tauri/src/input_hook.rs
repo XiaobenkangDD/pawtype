@@ -783,38 +783,44 @@ pub mod macos_hook {
     pub fn show_macos_diagnostics_dialog() {
         let st = get_macos_input_status();
         let ax_txt = if st.accessibility {
-            "已授权"
+            "✅ 正常"
         } else {
-            "未生效"
+            "❌ 未生效（请删了重加）"
         };
         let listen_txt = if st.input_monitoring {
-            "已授权"
+            "✅ 正常"
         } else {
-            "未生效"
+            "❌ 未生效（键盘关键，请优先修）"
         };
         let tap_txt = if st.tap_active && st.tap_has_keyboard {
-            "运行中（键鼠）"
+            "✅ 键鼠钩子运行中"
         } else if st.tap_active {
-            "仅鼠标（缺少键盘权限）"
+            "⚠️ 仅鼠标（键盘通道未就绪）"
         } else {
-            "未运行"
+            "❌ 钩子未运行"
         };
         let hid_txt = if st.hid_active {
-            "运行中（兼容 Karabiner）"
+            "✅ HID 备用通道运行中"
+        } else if st.input_monitoring {
+            "⚠️ HID 未启动（可点重新连接）"
         } else {
-            "未运行（需输入监控权限）"
+            "❌ 需先打开输入监控"
         };
-        let tip = if !st.accessibility || !st.input_monitoring {
-            "若系统设置里开关亮着但这里显示「未生效」，说明更新版本后系统缓存过期：请在「辅助功能」和「输入监控」中选中 PawType 点左下角「-」号删除，再点「+」号重新添加并重启。"
+        let tip = if !st.input_monitoring {
+            "一句话：更新后旧权限常会「假开」。到「输入监控」选中 PawType →「-」删除 →「+」重新添加 → 打开开关 → 完全退出再开。"
+        } else if !st.accessibility {
+            "输入监控已好。请同样在「辅助功能」里删了重加 PawType。"
+        } else if !st.tap_active && !st.hid_active {
+            "权限看起来正常，但监听钩子已死。请点托盘「重新连接键盘监听」，或完全退出后再开。"
         } else if st.key_events_received == 0 {
-            "权限均已生效！请先随便敲几下键盘测试；若使用 Karabiner-Elements 仍无响应，可点击托盘「重新连接键盘监听」。"
+            "权限与钩子都正常。请敲几下键盘测试；若用了 Karabiner，点「重新连接键盘监听」。"
         } else {
-            "键盘监听工作正常！"
+            "一切正常，可以安心打字摸猫。"
         };
 
         let msg = format!(
-            "辅助功能权限：{}\n输入监控权限：{}\nCGEventTap 通道：{}\nIOHIDManager 通道：{}\n已收到全局按键：{} 次\n\n{}",
-            ax_txt, listen_txt, tap_txt, hid_txt, st.key_events_received, tip
+            "【白话诊断】\n输入监控：{}\n辅助功能：{}\n主监听钩子：{}\n备用通道：{}\n已收到按键：{} 次\n\n{}",
+            listen_txt, ax_txt, tap_txt, hid_txt, st.key_events_received, tip
         );
         let escaped = msg
             .replace('\\', "\\\\")

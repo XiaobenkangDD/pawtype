@@ -6,11 +6,11 @@
 
 ## 📥 下载
 
-最新版 **[v0.2.0](https://github.com/XiaobenkangDD/pawtype/releases/tag/v0.2.0)**：
+最新版 **[v0.2.1](https://github.com/XiaobenkangDD/pawtype/releases/tag/v0.2.1)**：
 
-- Windows 安装包：[`PawType-0.2.0-x64-setup.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.2.0/PawType-0.2.0-x64-setup.exe)
-- Windows 绿色版：[`PawType-v0.2.0-windows-x64.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.2.0/PawType-v0.2.0-windows-x64.exe)
-- macOS Universal：[`PawType-v0.2.0-macos-universal.dmg`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.2.0/PawType-v0.2.0-macos-universal.dmg)
+- Windows 安装包：[`PawType-0.2.1-x64-setup.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.2.1/PawType-0.2.1-x64-setup.exe)
+- Windows 绿色版：[`PawType-v0.2.1-windows-x64.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.2.1/PawType-v0.2.1-windows-x64.exe)
+- macOS Universal：[`PawType-v0.2.1-macos-universal.dmg`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.2.1/PawType-v0.2.1-macos-universal.dmg)
 
 更多文件见 [Releases](https://github.com/XiaobenkangDD/pawtype/releases)。
 
@@ -31,9 +31,10 @@
 - 鼠标左 / 右 / 中键独立反馈；摸头眯眼 + 可选呼噜声
 - 透明区域智能点击穿透；缩放 20%–150%
 - App 内检查更新（对接本仓库 Releases）
-- 右键菜单支持「赞助解锁限定皮肤」（打工人猫 / 考研猫）
-- macOS 权限失效自动检测与一键引导（含 xattr / 删了重加）
-- macOS 首次启动提供辅助功能权限引导
+- 免费猫种扩展：银渐层、英短蓝猫
+- 赞助按「皮肤包」解锁：打工包 / 学霸包 / 夜猫包 / 节日包（可分开解锁）
+- 节日与考试档：春节猫（1–2 月限时免费）、高考猫（6/1–6/15 限时免费）
+- macOS 更新后强制权限复检；白话诊断（输入监控 / 辅助功能 / 钩子状态）+ 一键复制修复命令
 
 ## 🤖 MCP 接入
 

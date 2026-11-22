@@ -16,38 +16,49 @@
     </div>
 
     <div id="ax-guide" class="panel-card hidden" role="dialog" aria-labelledby="ax-guide-title">
-      <div class="panel-title" id="ax-guide-title">键盘权限未生效</div>
+      <div class="panel-title" id="ax-guide-title">键盘权限帮助</div>
       <p class="panel-text" id="ax-guide-status">
-        检测到当前安装包的「输入监控 / 辅助功能」未生效。更新后旧开关常会失效，需要删掉再重新添加。
+        更新后旧权限常会「假开」。按下面白话诊断处理即可。
       </p>
+      <ul class="ax-diag" id="ax-diag-list">
+        <li id="diag-listen">输入监控：检测中…</li>
+        <li id="diag-ax">辅助功能：检测中…</li>
+        <li id="diag-hook">键盘钩子：检测中…</li>
+      </ul>
       <ol class="panel-steps">
-        <li>若打不开 App：终端执行 <code>xattr -cr /Applications/PawType.app</code></li>
-        <li>打开 <strong>输入监控</strong>：选中 PawType → 点「-」删除 → 再「+」添加并打开</li>
-        <li>打开 <strong>辅助功能</strong>：同样删除后重新添加</li>
-        <li>点下方「重新检测」；仍不行可点「重新连接监听」</li>
+        <li>打不开 App：终端执行 <code>xattr -cr /Applications/PawType.app</code></li>
+        <li><strong>输入监控</strong>（最关键）：选中 PawType →「-」删除 →「+」添加并打开</li>
+        <li><strong>辅助功能</strong>：同样删了重加</li>
+        <li>点「重新检测」；权限都绿但仍无按键 →「重新连接监听」</li>
       </ol>
       <div class="panel-actions">
         <button type="button" class="panel-btn" id="btn-input-monitor-open">打开输入监控</button>
         <button type="button" class="panel-btn" id="btn-ax-open">打开辅助功能</button>
         <button type="button" class="panel-btn" id="btn-ax-recheck">重新检测</button>
         <button type="button" class="panel-btn secondary" id="btn-ax-reconnect">重新连接监听</button>
-        <button type="button" class="panel-btn secondary" id="btn-ax-copy-xattr">复制 xattr 命令</button>
+        <button type="button" class="panel-btn secondary" id="btn-ax-copy-xattr">复制修复命令</button>
         <button type="button" class="panel-btn secondary" id="btn-ax-later">稍后</button>
       </div>
     </div>
 
     <div id="sponsor-panel" class="panel-card hidden" role="dialog" aria-labelledby="sponsor-title">
-      <div class="panel-title" id="sponsor-title">赞助 PawType</div>
-      <p class="panel-text">如果觉得好用，欢迎微信扫码支持作者 ☕</p>
+      <div class="panel-title" id="sponsor-title">赞助解锁皮肤包</div>
+      <p class="panel-text">微信扫码支持后，按需解锁皮肤包（可分开解锁）</p>
       <img
         id="sponsor-qr"
         class="sponsor-qr"
         src="/sponsor-wechat.png"
         alt="微信收款码"
       />
-      <p class="panel-hint" id="sponsor-hint">扫码赞助后可解锁「打工人猫 / 考研猫」</p>
+      <p class="panel-hint" id="sponsor-hint">打工包 / 学霸包 / 夜猫包 / 节日包</p>
+      <div class="pack-grid" id="pack-grid">
+        <button type="button" class="pack-btn" data-pack="office">解锁打工包<br /><span>打工·码农·摸鱼</span></button>
+        <button type="button" class="pack-btn" data-pack="study">解锁学霸包<br /><span>考研·高考</span></button>
+        <button type="button" class="pack-btn" data-pack="night">解锁夜猫包<br /><span>熬夜猫</span></button>
+        <button type="button" class="pack-btn" data-pack="festival">解锁节日包<br /><span>春节猫</span></button>
+      </div>
       <div class="panel-actions">
-        <button type="button" class="panel-btn" id="btn-sponsor-unlock">我已赞助，解锁皮肤</button>
+        <button type="button" class="panel-btn" id="btn-sponsor-unlock">我已赞助，解锁全部</button>
         <button type="button" class="panel-btn secondary" id="btn-sponsor-close">关闭</button>
       </div>
     </div>
@@ -135,11 +146,11 @@
       </button>
       <button class="menu-item" data-action="check-update" id="btn-check-update">
         <span>检查更新</span>
-        <span class="menu-hint" id="update-hint">v0.2.0</span>
+        <span class="menu-hint" id="update-hint">v0.2.1</span>
       </button>
       <button class="menu-item" data-action="sponsor">
-        <span>赞助解锁限定皮肤</span>
-        <span class="menu-hint" id="sponsor-menu-hint">☕ 打工人/考研</span>
+        <span>赞助解锁皮肤包</span>
+        <span class="menu-hint" id="sponsor-menu-hint">☕ 皮肤包</span>
       </button>
       <button class="menu-item" data-action="perm-guide" id="btn-perm-guide">
         <span>键盘权限帮助</span>

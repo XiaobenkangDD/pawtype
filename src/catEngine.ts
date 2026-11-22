@@ -960,12 +960,229 @@ export class PawTypeEngine {
     this.drawPaw(ctx, this.leftPaw, breath);
     this.drawPaw(ctx, this.rightPaw, breath);
 
-    // Layer 5: Organic bouncing 3D keycap bubbles & crisp mouse click badges
+    // Layer 5: Theme props (briefcase / book / fish / moon…) so premium skins read instantly
+    this.drawThemeProp(ctx, breath, purrShift);
+
+    // Layer 6: Organic bouncing 3D keycap bubbles & crisp mouse click badges
     if (this.showKeyBubbles) {
       this.drawKeyBubbles(ctx);
       this.drawMouseBadges(ctx);
     }
 
+    ctx.restore();
+  }
+
+  private drawThemeProp(ctx: CanvasRenderingContext2D, breath: number, purrShift: number): void {
+    const id = this.customSkin?.id;
+    if (!id) return;
+
+    const head = this.spinePoint(0.22, breath);
+    const chest = this.spinePoint(0.52, breath);
+    const hx = head.x + purrShift;
+    const hy = head.y;
+    const wShift = this.faceTurnX * 0.72;
+
+    // Body-attached only: no floating stickers beside the cat.
+    ctx.save();
+    switch (id) {
+      case 'worker': {
+        // Short necktie centered on white shirt bib
+        const nx = chest.x + purrShift;
+        const ny = chest.y + 18;
+        ctx.fillStyle = '#b91c1c';
+        ctx.beginPath();
+        ctx.moveTo(nx - 7, ny);
+        ctx.lineTo(nx + 7, ny);
+        ctx.lineTo(nx + 3.5, ny + 22);
+        ctx.lineTo(nx, ny + 26);
+        ctx.lineTo(nx - 3.5, ny + 22);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#7f1d1d';
+        ctx.beginPath();
+        ctx.moveTo(nx - 9, ny - 5);
+        ctx.lineTo(nx + 9, ny - 5);
+        ctx.lineTo(nx + 7, ny);
+        ctx.lineTo(nx - 7, ny);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      }
+      case 'kaoyan': {
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.rotate(this.headTilt);
+        // Glasses aligned to actual eye centers (±23, -1)
+        ctx.strokeStyle = '#1e3a8a';
+        ctx.lineWidth = 2.2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.ellipse(wShift - 23, -1, 16.5, 15.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(wShift + 23, -1, 16.5, 15.5, 0, 0, Math.PI * 2);
+        ctx.moveTo(wShift - 6.5, -1);
+        ctx.lineTo(wShift + 6.5, -1);
+        ctx.moveTo(wShift - 39.5, -3);
+        ctx.lineTo(wShift - 48, -8);
+        ctx.moveTo(wShift + 39.5, -3);
+        ctx.lineTo(wShift + 48, -8);
+        ctx.stroke();
+        // Pencil tucked behind right ear
+        ctx.translate(wShift + 36, -34);
+        ctx.rotate(0.55);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(-2, 0, 22, 3.2);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(16, 0, 4, 3.2);
+        ctx.fillStyle = '#64748b';
+        ctx.beginPath();
+        ctx.moveTo(-2, 0);
+        ctx.lineTo(-7, 1.6);
+        ctx.lineTo(-2, 3.2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        break;
+      }
+      case 'coder': {
+        // Over-ear headphones (reads instantly as “coder”)
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.rotate(this.headTilt);
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 3.2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(wShift, -6, 46, Math.PI * 1.12, Math.PI * 1.88);
+        ctx.stroke();
+        for (const sgn of [-1, 1] as const) {
+          ctx.fillStyle = '#0f172a';
+          ctx.beginPath();
+          ctx.ellipse(wShift + sgn * 44, 2, 9, 13, sgn * 0.12, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#4ade80';
+          ctx.beginPath();
+          ctx.ellipse(wShift + sgn * 44, 2, 4.5, 7, sgn * 0.12, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        break;
+      }
+      case 'slack': {
+        // Tiny fish dangling from mouth — literal 摸鱼, no floating sticker
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.rotate(this.headTilt);
+        const fx = wShift;
+        const fy = 24;
+        const sway = Math.sin(this.elapsed * 2.4) * 0.12;
+        ctx.translate(fx, fy);
+        ctx.rotate(sway);
+        ctx.fillStyle = '#0ea5e9';
+        ctx.beginPath();
+        ctx.ellipse(0, 10, 11, 6, 0.15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(8, 10);
+        ctx.lineTo(16, 4);
+        ctx.lineTo(16, 16);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(-5, 9, 1.4, 0, Math.PI * 2);
+        ctx.fill();
+        // bite line into mouth
+        ctx.strokeStyle = 'rgba(14, 165, 233, 0.7)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, 5);
+        ctx.stroke();
+        ctx.restore();
+        break;
+      }
+      case 'nightowl': {
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.rotate(this.headTilt);
+        // Crescent clipped into the ear crown (reads as headwear, not sticker)
+        ctx.save();
+        ctx.translate(wShift + 22, -38);
+        ctx.fillStyle = '#fde68a';
+        ctx.shadowColor = 'rgba(253, 224, 71, 0.5)';
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(0, 0, 7.5, 0.35, Math.PI * 1.55);
+        ctx.arc(3.8, -0.8, 6, Math.PI * 1.4, 0.5, true);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        // Under-eye bags (draw after eyes layer via this late prop pass)
+        ctx.fillStyle = 'rgba(185, 28, 28, 0.62)';
+        ctx.beginPath();
+        ctx.ellipse(wShift - 23, 13.5, 12, 4.8, 0.1, 0, Math.PI * 2);
+        ctx.ellipse(wShift + 23, 13.5, 12, 4.8, -0.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        break;
+      }
+      case 'spring': {
+        // Red festive knot on ear
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.rotate(this.headTilt);
+        ctx.translate(wShift + 34, -36);
+        ctx.fillStyle = '#dc2626';
+        ctx.beginPath();
+        ctx.ellipse(-5, 0, 7, 5, -0.4, 0, Math.PI * 2);
+        ctx.ellipse(5, 0, 7, 5, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#dc2626';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 3);
+        ctx.quadraticCurveTo(-4, 12, -2, 18);
+        ctx.moveTo(0, 3);
+        ctx.quadraticCurveTo(4, 12, 2, 18);
+        ctx.stroke();
+        ctx.restore();
+        break;
+      }
+      case 'gaokao': {
+        // Admit-ticket style badge on chest + slim glasses
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.rotate(this.headTilt);
+        ctx.strokeStyle = '#1e3a8a';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.ellipse(wShift - 23, -1, 15, 14, 0, 0, Math.PI * 2);
+        ctx.ellipse(wShift + 23, -1, 15, 14, 0, 0, Math.PI * 2);
+        ctx.moveTo(wShift - 8, -1);
+        ctx.lineTo(wShift + 8, -1);
+        ctx.stroke();
+        ctx.restore();
+        const bx = chest.x + purrShift;
+        const by = chest.y + 22;
+        ctx.fillStyle = '#dbeafe';
+        ctx.strokeStyle = '#1d4ed8';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(bx - 16, by - 8, 32, 18, 3);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#1e3a8a';
+        ctx.font = 'bold 8px sans-serif';
+        ctx.fillText('准考证', bx - 12, by + 4);
+        break;
+      }
+      default:
+        break;
+    }
     ctx.restore();
   }
 

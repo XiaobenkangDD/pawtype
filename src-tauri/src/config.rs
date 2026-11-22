@@ -65,8 +65,15 @@ pub struct AppSettings {
     pub keyboard_orientation: String,
     #[serde(default)]
     pub accessibility_guide_seen: bool,
+    /// Legacy master unlock (v0.2.0). Still honored as "all packs".
     #[serde(default)]
     pub sponsor_unlocked: bool,
+    /// Skin packs unlocked after sponsorship: office / study / night / festival.
+    #[serde(default)]
+    pub unlocked_packs: Vec<String>,
+    /// Last app version that completed post-update permission check.
+    #[serde(default)]
+    pub last_seen_version: String,
 }
 
 impl Default for AppSettings {
@@ -87,6 +94,8 @@ impl Default for AppSettings {
             keyboard_orientation: default_keyboard_orientation(),
             accessibility_guide_seen: false,
             sponsor_unlocked: false,
+            unlocked_packs: Vec::new(),
+            last_seen_version: String::new(),
         }
     }
 }

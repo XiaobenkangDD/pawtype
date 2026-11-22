@@ -65,11 +65,23 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
     let breed_calico = MenuItem::with_id(app, "breed_calico", "三花猫", true, None::<&str>)?;
     let breed_tuxedo = MenuItem::with_id(app, "breed_tuxedo", "奶牛猫", true, None::<&str>)?;
     let breed_siamese = MenuItem::with_id(app, "breed_siamese", "暹罗猫", true, None::<&str>)?;
+    let breed_silver = MenuItem::with_id(app, "breed_silver", "银渐层", true, None::<&str>)?;
+    let breed_britblue = MenuItem::with_id(app, "breed_britblue", "英短蓝猫", true, None::<&str>)?;
     let breed_sep = PredefinedMenuItem::separator(app)?;
     let breed_worker =
-        MenuItem::with_id(app, "breed_worker", "打工人猫（赞助解锁）", true, None::<&str>)?;
+        MenuItem::with_id(app, "breed_worker", "打工人猫（打工包）", true, None::<&str>)?;
+    let breed_coder =
+        MenuItem::with_id(app, "breed_coder", "程序员猫（打工包）", true, None::<&str>)?;
+    let breed_slack =
+        MenuItem::with_id(app, "breed_slack", "摸鱼猫（打工包）", true, None::<&str>)?;
     let breed_kaoyan =
-        MenuItem::with_id(app, "breed_kaoyan", "考研猫（赞助解锁）", true, None::<&str>)?;
+        MenuItem::with_id(app, "breed_kaoyan", "考研猫（学霸包）", true, None::<&str>)?;
+    let breed_gaokao =
+        MenuItem::with_id(app, "breed_gaokao", "高考猫（学霸包/暑期）", true, None::<&str>)?;
+    let breed_nightowl =
+        MenuItem::with_id(app, "breed_nightowl", "熬夜猫（夜猫包）", true, None::<&str>)?;
+    let breed_spring =
+        MenuItem::with_id(app, "breed_spring", "春节猫（节日包/春节档）", true, None::<&str>)?;
     let breed_menu = Submenu::with_items(
         app,
         "猫咪外观",
@@ -81,9 +93,16 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
             &breed_calico,
             &breed_tuxedo,
             &breed_siamese,
+            &breed_silver,
+            &breed_britblue,
             &breed_sep,
             &breed_worker,
+            &breed_coder,
+            &breed_slack,
             &breed_kaoyan,
+            &breed_gaokao,
+            &breed_nightowl,
+            &breed_spring,
         ],
     )?;
 
@@ -320,14 +339,21 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                 "breed_calico" => apply_breed_and_save(app, "calico"),
                 "breed_tuxedo" => apply_breed_and_save(app, "tuxedo"),
                 "breed_siamese" => apply_breed_and_save(app, "siamese"),
-                "breed_worker" | "breed_kaoyan" => {
-                    let breed = if event.id().as_ref() == "breed_worker" {
-                        "worker"
-                    } else {
-                        "kaoyan"
+                "breed_silver" => apply_breed_and_save(app, "silver"),
+                "breed_britblue" => apply_breed_and_save(app, "britblue"),
+                "breed_worker" | "breed_kaoyan" | "breed_coder" | "breed_slack" | "breed_nightowl"
+                | "breed_gaokao" | "breed_spring" => {
+                    let breed = match event.id().as_ref() {
+                        "breed_worker" => "worker",
+                        "breed_kaoyan" => "kaoyan",
+                        "breed_coder" => "coder",
+                        "breed_slack" => "slack",
+                        "breed_gaokao" => "gaokao",
+                        "breed_spring" => "spring",
+                        _ => "nightowl",
                     };
-                    let unlocked = state.settings.lock().unwrap().sponsor_unlocked;
-                    if unlocked {
+                    let settings = state.settings.lock().unwrap().clone();
+                    if crate::packs::can_use_cat(breed, &settings) {
                         apply_breed_and_save(app, breed);
                     } else if let Some(win) = app.get_webview_window("main") {
                         let _ = win.show();

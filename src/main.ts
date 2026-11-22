@@ -23,6 +23,8 @@ interface AppSettings {
   keyboardOrientation: KeyboardOrientation;
   accessibilityGuideSeen: boolean;
   sponsorUnlocked: boolean;
+  unlockedPacks: string[];
+  lastSeenVersion: string;
 }
 
 type InputEvent =
@@ -59,7 +61,7 @@ interface UpdateProgressEvent {
   info: UpdateInfo | null;
 }
 
-let appVersion = '0.2.0';
+let appVersion = '0.2.1';
 let latestUpdateInfo: UpdateInfo | null = null;
 let updateBusy = false;
 let dismissedVersion: string | null = null;
@@ -67,8 +69,34 @@ let toastAutoHideTimer: number | null = null;
 let sliderDragging = false;
 const isMac =
   /Mac/i.test(navigator.platform) || /Macintosh/i.test(navigator.userAgent);
-const PREMIUM_CAT_IDS = new Set(['worker', 'kaoyan']);
 const XATTR_CMD = 'xattr -cr /Applications/PawType.app';
+const FIX_CMDS = `${XATTR_CMD}\n# 然后到「输入监控」「辅助功能」删掉旧 PawType 再重新添加`;
+
+const CAT_PACK: Record<string, string> = {
+  worker: 'office',
+  coder: 'office',
+  slack: 'office',
+  kaoyan: 'study',
+  gaokao: 'study',
+  nightowl: 'night',
+  spring: 'festival',
+};
+
+const PACK_LABEL: Record<string, string> = {
+  office: '打工包',
+  study: '学霸包',
+  night: '夜猫包',
+  festival: '节日包',
+};
+
+interface SkinPackStatus {
+  sponsorUnlocked: boolean;
+  unlockedPacks: string[];
+  seasonal: { spring: boolean; gaokao: boolean };
+  packs: Array<{ id: string; name: string; cats: string[]; unlocked: boolean }>;
+}
+
+let packStatus: SkinPackStatus | null = null;
 
 interface MacInputStatus {
   accessibility: boolean;
@@ -95,6 +123,8 @@ let settings: AppSettings = {
   keyboardOrientation: 'cat',
   accessibilityGuideSeen: false,
   sponsorUnlocked: false,
+  unlockedPacks: [],
+  lastSeenVersion: '',
 };
 
 let catList: CatSkinConfig[] = [...DEFAULT_BUILTIN_CATS];
@@ -128,6 +158,53 @@ function closeSponsorPanel(): void {
   }
 }
 
+async function refreshPackStatus(): Promise<void> {
+  try {
+    packStatus = await invoke<SkinPackStatus>('get_skin_pack_status');
+  } catch (err) {
+    console.error('pack status failed', err);
+  }
+  renderPackButtons();
+}
+
+function renderPackButtons(): void {
+  const grid = document.getElementById('pack-grid');
+  if (!grid) return;
+  const buttons = grid.querySelectorAll<HTMLButtonElement>('.pack-btn');
+  for (const btn of buttons) {
+    const pack = btn.dataset.pack || '';
+    const info = packStatus?.packs.find((p) => p.id === pack);
+    const unlocked = Boolean(info?.unlocked || settings.sponsorUnlocked);
+    btn.classList.toggle('unlocked', unlocked);
+    const seasonal =
+      (pack === 'festival' && packStatus?.seasonal.spring) ||
+      (pack === 'study' && packStatus?.seasonal.gaokao);
+    btn.classList.toggle('seasonal', Boolean(seasonal) && !unlocked);
+    if (unlocked) {
+      btn.innerHTML = `✓ 已解锁${PACK_LABEL[pack] || pack}<br /><span>${info?.cats?.join(' · ') || ''}</span>`;
+    } else if (seasonal) {
+      btn.innerHTML = `限时免费体验中<br /><span>也可赞助永久解锁</span>`;
+    } else {
+      const names: Record<string, string> = {
+        office: '打工·码农·摸鱼',
+        study: '考研·高考',
+        night: '熬夜猫',
+        festival: '春节猫',
+      };
+      btn.innerHTML = `解锁${PACK_LABEL[pack] || pack}<br /><span>${names[pack] || ''}</span>`;
+    }
+  }
+  if (sponsorHintEl) {
+    if (settings.sponsorUnlocked) {
+      sponsorHintEl.textContent = '已解锁全部皮肤包，感谢支持！';
+    } else {
+      const n = settings.unlockedPacks?.length || 0;
+      sponsorHintEl.textContent =
+        n > 0 ? `已解锁 ${n} 个皮肤包；扫码后可继续解锁其它包` : '扫码赞助后，点对应皮肤包解锁';
+    }
+  }
+}
+
 function openSponsorPanel(): void {
   closeContextMenu();
   axGuideEl.classList.add('hidden');
@@ -141,12 +218,10 @@ function openSponsorPanel(): void {
     };
     sponsorQrEl.onload = () => {
       sponsorQrEl.classList.remove('is-missing');
-      if (sponsorHintEl) {
-        sponsorHintEl.textContent = settings.sponsorUnlocked ? '已解锁限定皮肤，感谢支持！' : '扫码赞助后点下方解锁「打工人猫 / 考研猫」';
-      }
     };
     sponsorQrEl.src = `/sponsor-wechat.png?t=${Date.now()}`;
   }
+  void refreshPackStatus();
   sponsorPanelEl.classList.remove('hidden');
   setOverlayOpen(true);
 }
@@ -171,42 +246,100 @@ function openAxGuide(): void {
 }
 
 function isPremiumCat(id: string): boolean {
-  return PREMIUM_CAT_IDS.has(id);
+  return Boolean(CAT_PACK[id]);
+}
+
+function isSeasonallyFree(id: string): boolean {
+  if (id === 'spring') return Boolean(packStatus?.seasonal.spring);
+  if (id === 'gaokao') return Boolean(packStatus?.seasonal.gaokao);
+  return false;
 }
 
 function canUseCat(id: string): boolean {
-  return !isPremiumCat(id) || settings.sponsorUnlocked;
+  if (!isPremiumCat(id)) return true;
+  if (settings.sponsorUnlocked) return true;
+  if (isSeasonallyFree(id)) return true;
+  const pack = CAT_PACK[id];
+  return Boolean(pack && settings.unlockedPacks?.includes(pack));
+}
+
+function setDiagItem(id: string, text: string, level: 'ok' | 'bad' | 'warn'): void {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = level;
+}
+
+function updatePermissionDiagnostics(st: MacInputStatus): void {
+  setDiagItem(
+    'diag-listen',
+    st.inputMonitoring ? '输入监控：✅ 正常' : '输入监控：❌ 未生效（键盘关键，请删了重加）',
+    st.inputMonitoring ? 'ok' : 'bad',
+  );
+  setDiagItem(
+    'diag-ax',
+    st.accessibility ? '辅助功能：✅ 正常' : '辅助功能：❌ 未生效（请删了重加）',
+    st.accessibility ? 'ok' : 'bad',
+  );
+  let hookText = '键盘钩子：检测中…';
+  let hookLevel: 'ok' | 'bad' | 'warn' = 'warn';
+  if (st.tapActive && st.tapHasKeyboard) {
+    hookText = `键盘钩子：✅ 运行中（已收键 ${st.keyEventsReceived} 次）`;
+    hookLevel = 'ok';
+  } else if (st.hidActive) {
+    hookText = `键盘钩子：⚠️ 走备用通道（已收键 ${st.keyEventsReceived} 次）`;
+    hookLevel = st.keyEventsReceived > 0 ? 'ok' : 'warn';
+  } else if (st.inputMonitoring) {
+    hookText = '键盘钩子：❌ 已死（权限有，但监听未跑，请重新连接）';
+    hookLevel = 'bad';
+  } else {
+    hookText = '键盘钩子：❌ 未运行（先修输入监控）';
+    hookLevel = 'bad';
+  }
+  setDiagItem('diag-hook', hookText, hookLevel);
+
+  const statusEl = document.getElementById('ax-guide-status');
+  const titleEl = document.getElementById('ax-guide-title');
+  if (!statusEl) return;
+  if (!st.inputMonitoring) {
+    statusEl.className = 'panel-text panel-status-bad';
+    statusEl.textContent =
+      '一句话：到「输入监控」选中 PawType →「-」删除 →「+」重新添加并打开。更新后旧开关常会假开。';
+    if (titleEl) titleEl.textContent = '输入监控未生效';
+  } else if (!st.accessibility) {
+    statusEl.className = 'panel-text panel-status-bad';
+    statusEl.textContent = '输入监控已好。请同样在「辅助功能」里删了重加 PawType。';
+    if (titleEl) titleEl.textContent = '辅助功能未生效';
+  } else if (!st.tapActive && !st.hidActive) {
+    statusEl.className = 'panel-text panel-status-bad';
+    statusEl.textContent = '权限看起来正常，但键盘钩子已死。请点「重新连接监听」，或完全退出后再开。';
+    if (titleEl) titleEl.textContent = '键盘钩子已断开';
+  } else {
+    statusEl.className = 'panel-text panel-status-ok';
+    statusEl.textContent = `权限正常：已收到按键 ${st.keyEventsReceived} 次。若刚更新完，建议确认下方三项都是绿色。`;
+    if (titleEl) titleEl.textContent = '键盘权限正常';
+  }
 }
 
 async function refreshPermissionGuide(force = false): Promise<boolean> {
   if (!isMac) return true;
   try {
     const st = await invoke<MacInputStatus>('get_macos_input_status');
-    const ok = Boolean(st.inputMonitoring) && (st.tapHasKeyboard || st.hidActive || st.keyEventsReceived > 0 || st.tapActive);
-    // Keyboard critically depends on Input Monitoring for adhoc builds.
-    const needsGuide = !st.inputMonitoring;
-    const statusEl = document.getElementById('ax-guide-status');
-    if (statusEl) {
-      if (!st.inputMonitoring && !st.accessibility) {
-        statusEl.className = 'panel-text panel-status-bad';
-        statusEl.textContent =
-          '当前检测：输入监控未生效，辅助功能未生效。请删除旧条目后重新添加 PawType。';
-      } else if (!st.inputMonitoring) {
-        statusEl.className = 'panel-text panel-status-bad';
-        statusEl.textContent =
-          '辅助功能似乎可用，但输入监控未生效。键盘仍可能无反应，请优先修复「输入监控」。';
-      } else {
-        statusEl.className = 'panel-text panel-status-ok';
-        statusEl.textContent = `权限正常：输入监控已授权；已收到按键 ${st.keyEventsReceived} 次。`;
-      }
-    }
-    if (needsGuide) {
+    const ok =
+      Boolean(st.inputMonitoring) &&
+      (st.tapHasKeyboard || st.hidActive || st.keyEventsReceived > 0 || st.tapActive);
+    const hookDead = st.inputMonitoring && st.accessibility && !st.tapActive && !st.hidActive;
+    const needsGuide = !st.inputMonitoring || hookDead || force;
+    updatePermissionDiagnostics(st);
+    if (needsGuide && (!st.inputMonitoring || hookDead || force)) {
       openAxGuide();
-      void invoke('prompt_listen_event_access');
-      if (!st.accessibility) void invoke('prompt_accessibility_permission');
+      if (!st.inputMonitoring) {
+        void invoke('prompt_listen_event_access');
+        if (!st.accessibility) void invoke('prompt_accessibility_permission');
+      }
       return false;
     }
-    if (!force && !axGuideEl.classList.contains('hidden')) {
+    if (!force && !axGuideEl.classList.contains('hidden') && st.inputMonitoring && !hookDead) {
       closeAxGuide(true);
     }
     return ok || st.inputMonitoring;
@@ -218,6 +351,15 @@ async function refreshPermissionGuide(force = false): Promise<boolean> {
 
 async function maybeShowAccessibilityGuide(): Promise<void> {
   if (!isMac) return;
+  const justUpdated = settings.lastSeenVersion !== appVersion;
+  if (justUpdated) {
+    const titleEl = document.getElementById('ax-guide-title');
+    if (titleEl) titleEl.textContent = `已更新到 v${appVersion}，请确认权限`;
+    openAxGuide();
+    await refreshPermissionGuide(true);
+    void applySettingsPatch({ lastSeenVersion: appVersion });
+    return;
+  }
   await refreshPermissionGuide(false);
 }
 
@@ -236,10 +378,16 @@ function renderBreedPills(): void {
     btn.className = 'breed-pill';
     btn.dataset.breed = cat.id;
     const emoji = cat.emoji ? `${cat.emoji} ` : '🐱 ';
-    const locked = isPremiumCat(cat.id) && !settings.sponsorUnlocked;
-    btn.textContent = `${locked ? '🔒 ' : emoji}${cat.name}`;
+    const locked = !canUseCat(cat.id);
+    const seasonal = isSeasonallyFree(cat.id);
+    btn.textContent = `${locked ? '🔒 ' : emoji}${cat.name}${seasonal && locked === false && isPremiumCat(cat.id) ? '·限时' : ''}`;
     btn.classList.toggle('locked', locked);
-    btn.title = locked ? '赞助后解锁' : cat.name;
+    const pack = CAT_PACK[cat.id];
+    btn.title = locked
+      ? `需解锁${PACK_LABEL[pack] || '皮肤包'}`
+      : seasonal
+        ? `${cat.name}（限时免费）`
+        : cat.name;
     const accent = cat.accentColor || (cat.id === 'ragdoll' ? '#7ac7ff' : '#c8f538');
     btn.style.setProperty('--pill-accent', accent);
     btn.classList.toggle('active', cat.id === settings.catBreed);
@@ -247,7 +395,10 @@ function renderBreedPills(): void {
   }
   const hint = document.getElementById('sponsor-menu-hint');
   if (hint) {
-    hint.textContent = settings.sponsorUnlocked ? '✓ 已解锁' : '☕ 打工人/考研';
+    if (settings.sponsorUnlocked) hint.textContent = '✓ 全解锁';
+    else if ((settings.unlockedPacks?.length || 0) > 0)
+      hint.textContent = `✓ ${settings.unlockedPacks.length}包`;
+    else hint.textContent = '☕ 皮肤包';
   }
 }
 
@@ -540,6 +691,9 @@ async function bootstrap(): Promise<void> {
       appVersion = loadedVer;
       setUpdateHint(`v${appVersion}`);
     }
+    if (!Array.isArray(settings.unlockedPacks)) settings.unlockedPacks = [];
+    if (typeof settings.lastSeenVersion !== 'string') settings.lastSeenVersion = '';
+    await refreshPackStatus();
     syncMenuUI();
     await maybeShowAccessibilityGuide();
     void startPermissionWatcher();
@@ -569,10 +723,10 @@ async function bootstrap(): Promise<void> {
   document.getElementById('btn-ax-copy-xattr')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(XATTR_CMD);
+      await navigator.clipboard.writeText(FIX_CMDS);
       const statusEl = document.getElementById('ax-guide-status');
       if (statusEl) {
-        statusEl.textContent = '已复制：' + XATTR_CMD;
+        statusEl.textContent = '已复制修复命令，可粘贴到「终端」执行。';
         statusEl.className = 'panel-text panel-status-ok';
       }
     } catch (err) {
@@ -583,11 +737,23 @@ async function bootstrap(): Promise<void> {
     e.stopPropagation();
     closeAxGuide(true);
   });
+  document.getElementById('pack-grid')?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest('.pack-btn') as HTMLButtonElement | null;
+    if (!btn) return;
+    e.stopPropagation();
+    const pack = btn.dataset.pack;
+    if (!pack) return;
+    void invoke<AppSettings>('unlock_skin_pack', { pack }).then(async (next) => {
+      settings = next;
+      await refreshPackStatus();
+      syncMenuUI();
+    });
+  });
   document.getElementById('btn-sponsor-unlock')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    void applySettingsPatch({ sponsorUnlocked: true }).then(() => {
-      const hint = document.getElementById('sponsor-hint');
-      if (hint) hint.textContent = '已解锁打工人猫 / 考研猫，感谢支持！';
+    void invoke<AppSettings>('unlock_skin_pack', { pack: 'all' }).then(async (next) => {
+      settings = next;
+      await refreshPackStatus();
       syncMenuUI();
     });
   });
@@ -655,6 +821,8 @@ async function bootstrap(): Promise<void> {
 
   await listen<AppSettings>('paw-settings', (ev) => {
     settings = ev.payload;
+    if (!Array.isArray(settings.unlockedPacks)) settings.unlockedPacks = [];
+    void refreshPackStatus();
     syncMenuUI();
   });
 

@@ -4,14 +4,12 @@ mod cats;
 mod config;
 mod input_hook;
 mod mcp;
+mod packs;
 mod tray;
 mod updater;
 
 use cats::{all_cats, cat_exists, cats_path, sanitize_cat_id, CatSkinConfig};
-
-fn is_premium_cat(id: &str) -> bool {
-    matches!(id, "worker" | "kaoyan")
-}
+use packs::{can_use_cat, unlock_pack};
 use config::{
     config_path, load_settings, normalize_keyboard_layout, normalize_keyboard_orientation,
     save_settings, set_windows_autostart, AppSettings,
@@ -124,12 +122,10 @@ fn get_mcp_config(state: State<'_, AppState>) -> String {
 fn update_settings(app: AppHandle, state: State<'_, AppState>, mut patch: AppSettings) -> AppSettings {
     patch.scale = patch.scale.clamp(0.20, 1.50);
     let clean_breed = sanitize_cat_id(&patch.cat_breed);
-    patch.cat_breed = if cat_exists(&clean_breed) {
-        if is_premium_cat(&clean_breed) && !patch.sponsor_unlocked {
-            "black".to_string()
-        } else {
-            clean_breed
-        }
+    patch.cat_breed = if cat_exists(&clean_breed) && can_use_cat(&clean_breed, &patch) {
+        clean_breed
+    } else if cat_exists(&clean_breed) {
+        "black".to_string()
     } else {
         "black".to_string()
     };
@@ -189,6 +185,59 @@ fn set_update_banner_open(state: State<'_, AppState>, open: bool) {
 #[tauri::command]
 fn get_app_version() -> String {
     updater::CURRENT_VERSION.to_string()
+}
+
+#[tauri::command]
+fn unlock_skin_pack(app: AppHandle, state: State<'_, AppState>, pack: String) -> AppSettings {
+    let updated = {
+        let mut s = state.settings.lock().unwrap();
+        unlock_pack(&mut s, &pack);
+        save_settings(&s);
+        s.clone()
+    };
+    let _ = app.emit("paw-settings", updated.clone());
+    updated
+}
+
+#[tauri::command]
+fn get_skin_pack_status(state: State<'_, AppState>) -> serde_json::Value {
+    let s = state.settings.lock().unwrap().clone();
+    let (_y, m, d) = packs::china_ymd();
+    serde_json::json!({
+        "sponsorUnlocked": s.sponsor_unlocked,
+        "unlockedPacks": s.unlocked_packs,
+        "chinaDate": { "month": m, "day": d },
+        "seasonal": {
+            "spring": packs::is_seasonally_free("spring"),
+            "gaokao": packs::is_seasonally_free("gaokao"),
+        },
+        "packs": [
+            {
+                "id": packs::PACK_OFFICE,
+                "name": "打工包",
+                "cats": ["worker", "coder", "slack"],
+                "unlocked": packs::has_pack(&s, packs::PACK_OFFICE),
+            },
+            {
+                "id": packs::PACK_STUDY,
+                "name": "学霸包",
+                "cats": ["kaoyan", "gaokao"],
+                "unlocked": packs::has_pack(&s, packs::PACK_STUDY),
+            },
+            {
+                "id": packs::PACK_NIGHT,
+                "name": "夜猫包",
+                "cats": ["nightowl"],
+                "unlocked": packs::has_pack(&s, packs::PACK_NIGHT),
+            },
+            {
+                "id": packs::PACK_FESTIVAL,
+                "name": "节日包",
+                "cats": ["spring"],
+                "unlocked": packs::has_pack(&s, packs::PACK_FESTIVAL),
+            },
+        ]
+    })
 }
 
 #[tauri::command]
@@ -339,12 +388,10 @@ pub fn apply_breed_and_save(app: &AppHandle, breed: &str) {
     let state = app.state::<AppState>();
     let updated = {
         let mut s = state.settings.lock().unwrap();
-        let normalized = if cat_exists(&clean) {
-            if is_premium_cat(&clean) && !s.sponsor_unlocked {
-                s.cat_breed.clone()
-            } else {
-                clean
-            }
+        let normalized = if cat_exists(&clean) && can_use_cat(&clean, &s) {
+            clean
+        } else if cat_exists(&clean) {
+            s.cat_breed.clone()
         } else {
             "black".to_string()
         };
@@ -772,6 +819,8 @@ pub fn run() {
             prompt_listen_event_access,
             get_macos_input_status,
             reconnect_macos_input,
+            unlock_skin_pack,
+            get_skin_pack_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PawType");
