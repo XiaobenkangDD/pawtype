@@ -1,6 +1,6 @@
 [package]
 name = "pawtype"
-version = "0.1.5"
+version = "0.2.0"
 description = "Cross-platform desktop cat typing & mouse companion for Windows and macOS"
 authors = ["XiaobenkangDD"]
 edition = "2021"

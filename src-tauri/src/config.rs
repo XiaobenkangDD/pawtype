@@ -65,6 +65,8 @@ pub struct AppSettings {
     pub keyboard_orientation: String,
     #[serde(default)]
     pub accessibility_guide_seen: bool,
+    #[serde(default)]
+    pub sponsor_unlocked: bool,
 }
 
 impl Default for AppSettings {
@@ -84,6 +86,7 @@ impl Default for AppSettings {
             keyboard_layout: default_keyboard_layout(),
             keyboard_orientation: default_keyboard_orientation(),
             accessibility_guide_seen: false,
+            sponsor_unlocked: false,
         }
     }
 }

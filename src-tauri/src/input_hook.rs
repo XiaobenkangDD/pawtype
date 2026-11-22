@@ -714,7 +714,8 @@ pub mod macos_hook {
     static LAST_TICK_WALL_MS: AtomicU64 = AtomicU64::new(0);
     static LAST_HID_RETRY_WALL_MS: AtomicU64 = AtomicU64::new(0);
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, serde::Serialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct MacInputStatus {
         pub accessibility: bool,
         pub input_monitoring: bool,

@@ -507,3 +507,28 @@ body {
 .sponsor-qr.is-missing {
   display: none;
 }
+
+
+.breed-pill.locked {
+  opacity: 0.72;
+}
+
+.breed-pill.locked::after {
+  content: " 🔒";
+  font-size: 10px;
+}
+
+.panel-steps code {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.panel-status-ok {
+  color: #b6f05c !important;
+}
+
+.panel-status-bad {
+  color: #ffb4b4 !important;
+}

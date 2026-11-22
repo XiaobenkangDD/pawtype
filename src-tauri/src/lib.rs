@@ -8,6 +8,10 @@ mod tray;
 mod updater;
 
 use cats::{all_cats, cat_exists, cats_path, sanitize_cat_id, CatSkinConfig};
+
+fn is_premium_cat(id: &str) -> bool {
+    matches!(id, "worker" | "kaoyan")
+}
 use config::{
     config_path, load_settings, normalize_keyboard_layout, normalize_keyboard_orientation,
     save_settings, set_windows_autostart, AppSettings,
@@ -121,7 +125,11 @@ fn update_settings(app: AppHandle, state: State<'_, AppState>, mut patch: AppSet
     patch.scale = patch.scale.clamp(0.20, 1.50);
     let clean_breed = sanitize_cat_id(&patch.cat_breed);
     patch.cat_breed = if cat_exists(&clean_breed) {
-        clean_breed
+        if is_premium_cat(&clean_breed) && !patch.sponsor_unlocked {
+            "black".to_string()
+        } else {
+            clean_breed
+        }
     } else {
         "black".to_string()
     };
@@ -298,16 +306,48 @@ fn prompt_listen_event_access() -> bool {
     }
 }
 
+#[tauri::command]
+fn get_macos_input_status() -> serde_json::Value {
+    #[cfg(target_os = "macos")]
+    {
+        serde_json::to_value(input_hook::macos_hook::get_macos_input_status())
+            .unwrap_or_else(|_| serde_json::json!({}))
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        serde_json::json!({
+            "accessibility": true,
+            "inputMonitoring": true,
+            "tapActive": true,
+            "tapHasKeyboard": true,
+            "hidActive": false,
+            "keyEventsReceived": 0
+        })
+    }
+}
+
+#[tauri::command]
+fn reconnect_macos_input() {
+    #[cfg(target_os = "macos")]
+    {
+        input_hook::macos_hook::trigger_macos_reconnect();
+    }
+}
+
 pub fn apply_breed_and_save(app: &AppHandle, breed: &str) {
     let clean = sanitize_cat_id(breed);
-    let normalized = if cat_exists(&clean) {
-        clean
-    } else {
-        "black".to_string()
-    };
     let state = app.state::<AppState>();
     let updated = {
         let mut s = state.settings.lock().unwrap();
+        let normalized = if cat_exists(&clean) {
+            if is_premium_cat(&clean) && !s.sponsor_unlocked {
+                s.cat_breed.clone()
+            } else {
+                clean
+            }
+        } else {
+            "black".to_string()
+        };
         s.cat_breed = normalized;
         save_settings(&s);
         s.clone()
@@ -730,6 +770,8 @@ pub fn run() {
             open_input_monitoring_settings,
             prompt_accessibility_permission,
             prompt_listen_event_access,
+            get_macos_input_status,
+            reconnect_macos_input,
         ])
         .run(tauri::generate_context!())
         .expect("error while running PawType");

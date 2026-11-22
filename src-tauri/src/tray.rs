@@ -65,6 +65,11 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
     let breed_calico = MenuItem::with_id(app, "breed_calico", "三花猫", true, None::<&str>)?;
     let breed_tuxedo = MenuItem::with_id(app, "breed_tuxedo", "奶牛猫", true, None::<&str>)?;
     let breed_siamese = MenuItem::with_id(app, "breed_siamese", "暹罗猫", true, None::<&str>)?;
+    let breed_sep = PredefinedMenuItem::separator(app)?;
+    let breed_worker =
+        MenuItem::with_id(app, "breed_worker", "打工人猫（赞助解锁）", true, None::<&str>)?;
+    let breed_kaoyan =
+        MenuItem::with_id(app, "breed_kaoyan", "考研猫（赞助解锁）", true, None::<&str>)?;
     let breed_menu = Submenu::with_items(
         app,
         "猫咪外观",
@@ -76,6 +81,9 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
             &breed_calico,
             &breed_tuxedo,
             &breed_siamese,
+            &breed_sep,
+            &breed_worker,
+            &breed_kaoyan,
         ],
     )?;
 
@@ -160,7 +168,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
         true,
         None::<&str>,
     )?;
-    let sponsor = MenuItem::with_id(app, "sponsor", "赞助作者（微信）", true, None::<&str>)?;
+    let sponsor = MenuItem::with_id(app, "sponsor", "赞助解锁限定皮肤（微信）", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "退出 PawType", true, None::<&str>)?;
 
     let sep1 = PredefinedMenuItem::separator(app)?;
@@ -312,6 +320,20 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                 "breed_calico" => apply_breed_and_save(app, "calico"),
                 "breed_tuxedo" => apply_breed_and_save(app, "tuxedo"),
                 "breed_siamese" => apply_breed_and_save(app, "siamese"),
+                "breed_worker" | "breed_kaoyan" => {
+                    let breed = if event.id().as_ref() == "breed_worker" {
+                        "worker"
+                    } else {
+                        "kaoyan"
+                    };
+                    let unlocked = state.settings.lock().unwrap().sponsor_unlocked;
+                    if unlocked {
+                        apply_breed_and_save(app, breed);
+                    } else if let Some(win) = app.get_webview_window("main") {
+                        let _ = win.show();
+                        let _ = app.emit("paw-open-sponsor", ());
+                    }
+                }
                 "scale_25" => apply_scale_and_save(app, 0.25),
                 "scale_50" => apply_scale_and_save(app, 0.5),
                 "scale_75" => apply_scale_and_save(app, 0.75),

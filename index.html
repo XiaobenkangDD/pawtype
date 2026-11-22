@@ -16,18 +16,22 @@
     </div>
 
     <div id="ax-guide" class="panel-card hidden" role="dialog" aria-labelledby="ax-guide-title">
-      <div class="panel-title" id="ax-guide-title">开启键盘监听权限</div>
-      <p class="panel-text">
-        按原版 KuroCat 的方案：键盘主要依赖「输入监控」；请两处都打开，覆盖安装后建议删掉旧条目再重新添加。
+      <div class="panel-title" id="ax-guide-title">键盘权限未生效</div>
+      <p class="panel-text" id="ax-guide-status">
+        检测到当前安装包的「输入监控 / 辅助功能」未生效。更新后旧开关常会失效，需要删掉再重新添加。
       </p>
       <ol class="panel-steps">
-        <li>先开 <strong>输入监控</strong>，添加并开启 <strong>PawType</strong>（最关键）</li>
-        <li>再开 <strong>辅助功能</strong>，添加并开启 <strong>PawType</strong></li>
-        <li>完全退出并重新打开；托盘可点「查看键盘监听与权限诊断」</li>
+        <li>若打不开 App：终端执行 <code>xattr -cr /Applications/PawType.app</code></li>
+        <li>打开 <strong>输入监控</strong>：选中 PawType → 点「-」删除 → 再「+」添加并打开</li>
+        <li>打开 <strong>辅助功能</strong>：同样删除后重新添加</li>
+        <li>点下方「重新检测」；仍不行可点「重新连接监听」</li>
       </ol>
       <div class="panel-actions">
         <button type="button" class="panel-btn" id="btn-input-monitor-open">打开输入监控</button>
         <button type="button" class="panel-btn" id="btn-ax-open">打开辅助功能</button>
+        <button type="button" class="panel-btn" id="btn-ax-recheck">重新检测</button>
+        <button type="button" class="panel-btn secondary" id="btn-ax-reconnect">重新连接监听</button>
+        <button type="button" class="panel-btn secondary" id="btn-ax-copy-xattr">复制 xattr 命令</button>
         <button type="button" class="panel-btn secondary" id="btn-ax-later">稍后</button>
       </div>
     </div>
@@ -41,8 +45,9 @@
         src="/sponsor-wechat.png"
         alt="微信收款码"
       />
-      <p class="panel-hint" id="sponsor-hint">微信扫一扫上方二维码</p>
+      <p class="panel-hint" id="sponsor-hint">扫码赞助后可解锁「打工人猫 / 考研猫」</p>
       <div class="panel-actions">
+        <button type="button" class="panel-btn" id="btn-sponsor-unlock">我已赞助，解锁皮肤</button>
         <button type="button" class="panel-btn secondary" id="btn-sponsor-close">关闭</button>
       </div>
     </div>
@@ -130,11 +135,15 @@
       </button>
       <button class="menu-item" data-action="check-update" id="btn-check-update">
         <span>检查更新</span>
-        <span class="menu-hint" id="update-hint">v0.1.5</span>
+        <span class="menu-hint" id="update-hint">v0.2.0</span>
       </button>
       <button class="menu-item" data-action="sponsor">
-        <span>赞助作者（微信）</span>
-        <span class="menu-hint">☕</span>
+        <span>赞助解锁限定皮肤</span>
+        <span class="menu-hint" id="sponsor-menu-hint">☕ 打工人/考研</span>
+      </button>
+      <button class="menu-item" data-action="perm-guide" id="btn-perm-guide">
+        <span>键盘权限帮助</span>
+        <span class="menu-hint">macOS</span>
       </button>
       <button class="menu-item danger" data-action="quit">
         <span>退出 PawType</span>

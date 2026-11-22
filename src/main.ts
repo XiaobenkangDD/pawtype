@@ -22,6 +22,7 @@ interface AppSettings {
   keyboardLayout: KeyboardLayoutId;
   keyboardOrientation: KeyboardOrientation;
   accessibilityGuideSeen: boolean;
+  sponsorUnlocked: boolean;
 }
 
 type InputEvent =
@@ -58,7 +59,7 @@ interface UpdateProgressEvent {
   info: UpdateInfo | null;
 }
 
-let appVersion = '0.1.5';
+let appVersion = '0.2.0';
 let latestUpdateInfo: UpdateInfo | null = null;
 let updateBusy = false;
 let dismissedVersion: string | null = null;
@@ -66,6 +67,17 @@ let toastAutoHideTimer: number | null = null;
 let sliderDragging = false;
 const isMac =
   /Mac/i.test(navigator.platform) || /Macintosh/i.test(navigator.userAgent);
+const PREMIUM_CAT_IDS = new Set(['worker', 'kaoyan']);
+const XATTR_CMD = 'xattr -cr /Applications/PawType.app';
+
+interface MacInputStatus {
+  accessibility: boolean;
+  inputMonitoring: boolean;
+  tapActive: boolean;
+  tapHasKeyboard: boolean;
+  hidActive: boolean;
+  keyEventsReceived: number;
+}
 
 let settings: AppSettings = {
   x: null,
@@ -82,6 +94,7 @@ let settings: AppSettings = {
   keyboardLayout: '65',
   keyboardOrientation: 'cat',
   accessibilityGuideSeen: false,
+  sponsorUnlocked: false,
 };
 
 let catList: CatSkinConfig[] = [...DEFAULT_BUILTIN_CATS];
@@ -129,7 +142,7 @@ function openSponsorPanel(): void {
     sponsorQrEl.onload = () => {
       sponsorQrEl.classList.remove('is-missing');
       if (sponsorHintEl) {
-        sponsorHintEl.textContent = '微信扫一扫上方二维码';
+        sponsorHintEl.textContent = settings.sponsorUnlocked ? '已解锁限定皮肤，感谢支持！' : '扫码赞助后点下方解锁「打工人猫 / 考研猫」';
       }
     };
     sponsorQrEl.src = `/sponsor-wechat.png?t=${Date.now()}`;
@@ -157,21 +170,62 @@ function openAxGuide(): void {
   setOverlayOpen(true);
 }
 
-async function maybeShowAccessibilityGuide(): Promise<void> {
-  // On modern macOS, keyboard taps often also need Input Monitoring.
-  // Show the two-step guide once even if Accessibility alone looks granted.
-  if (!isMac || settings.accessibilityGuideSeen) return;
+function isPremiumCat(id: string): boolean {
+  return PREMIUM_CAT_IDS.has(id);
+}
+
+function canUseCat(id: string): boolean {
+  return !isPremiumCat(id) || settings.sponsorUnlocked;
+}
+
+async function refreshPermissionGuide(force = false): Promise<boolean> {
+  if (!isMac) return true;
   try {
-    openAxGuide();
-    const trusted = await invoke<boolean>('is_accessibility_trusted');
-    if (!trusted) {
-      void invoke('prompt_accessibility_permission');
+    const st = await invoke<MacInputStatus>('get_macos_input_status');
+    const ok = Boolean(st.inputMonitoring) && (st.tapHasKeyboard || st.hidActive || st.keyEventsReceived > 0 || st.tapActive);
+    // Keyboard critically depends on Input Monitoring for adhoc builds.
+    const needsGuide = !st.inputMonitoring;
+    const statusEl = document.getElementById('ax-guide-status');
+    if (statusEl) {
+      if (!st.inputMonitoring && !st.accessibility) {
+        statusEl.className = 'panel-text panel-status-bad';
+        statusEl.textContent =
+          '当前检测：输入监控未生效，辅助功能未生效。请删除旧条目后重新添加 PawType。';
+      } else if (!st.inputMonitoring) {
+        statusEl.className = 'panel-text panel-status-bad';
+        statusEl.textContent =
+          '辅助功能似乎可用，但输入监控未生效。键盘仍可能无反应，请优先修复「输入监控」。';
+      } else {
+        statusEl.className = 'panel-text panel-status-ok';
+        statusEl.textContent = `权限正常：输入监控已授权；已收到按键 ${st.keyEventsReceived} 次。`;
+      }
     }
-    // Explicitly request Input Monitoring (Listen Event Access) on modern macOS.
-    void invoke('prompt_listen_event_access');
+    if (needsGuide) {
+      openAxGuide();
+      void invoke('prompt_listen_event_access');
+      if (!st.accessibility) void invoke('prompt_accessibility_permission');
+      return false;
+    }
+    if (!force && !axGuideEl.classList.contains('hidden')) {
+      closeAxGuide(true);
+    }
+    return ok || st.inputMonitoring;
   } catch (err) {
-    console.error('Failed to check accessibility permission:', err);
+    console.error('permission status failed', err);
+    return true;
   }
+}
+
+async function maybeShowAccessibilityGuide(): Promise<void> {
+  if (!isMac) return;
+  await refreshPermissionGuide(false);
+}
+
+async function startPermissionWatcher(): Promise<void> {
+  if (!isMac) return;
+  window.setInterval(() => {
+    void refreshPermissionGuide(false);
+  }, 4000);
 }
 
 function renderBreedPills(): void {
@@ -182,11 +236,18 @@ function renderBreedPills(): void {
     btn.className = 'breed-pill';
     btn.dataset.breed = cat.id;
     const emoji = cat.emoji ? `${cat.emoji} ` : '🐱 ';
-    btn.textContent = `${emoji}${cat.name}`;
+    const locked = isPremiumCat(cat.id) && !settings.sponsorUnlocked;
+    btn.textContent = `${locked ? '🔒 ' : emoji}${cat.name}`;
+    btn.classList.toggle('locked', locked);
+    btn.title = locked ? '赞助后解锁' : cat.name;
     const accent = cat.accentColor || (cat.id === 'ragdoll' ? '#7ac7ff' : '#c8f538');
     btn.style.setProperty('--pill-accent', accent);
     btn.classList.toggle('active', cat.id === settings.catBreed);
     breedPillsEl.appendChild(btn);
+  }
+  const hint = document.getElementById('sponsor-menu-hint');
+  if (hint) {
+    hint.textContent = settings.sponsorUnlocked ? '✓ 已解锁' : '☕ 打工人/考研';
   }
 }
 
@@ -460,6 +521,9 @@ async function bootstrap(): Promise<void> {
   if (isMac) {
     const shortcutBtn = document.getElementById('btn-desktop-shortcut');
     if (shortcutBtn) shortcutBtn.style.display = 'none';
+  } else {
+    const permBtn = document.getElementById('btn-perm-guide');
+    if (permBtn) permBtn.style.display = 'none';
   }
 
   try {
@@ -478,6 +542,7 @@ async function bootstrap(): Promise<void> {
     }
     syncMenuUI();
     await maybeShowAccessibilityGuide();
+    void startPermissionWatcher();
   } catch (err) {
     console.error('Failed to load settings or cats:', err);
   }
@@ -490,10 +555,41 @@ async function bootstrap(): Promise<void> {
   document.getElementById('btn-input-monitor-open')?.addEventListener('click', (e) => {
     e.stopPropagation();
     void invoke('open_input_monitoring_settings');
+    void invoke('prompt_listen_event_access');
+  });
+  document.getElementById('btn-ax-recheck')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    void refreshPermissionGuide(true);
+  });
+  document.getElementById('btn-ax-reconnect')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    void invoke('reconnect_macos_input');
+    void refreshPermissionGuide(true);
+  });
+  document.getElementById('btn-ax-copy-xattr')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(XATTR_CMD);
+      const statusEl = document.getElementById('ax-guide-status');
+      if (statusEl) {
+        statusEl.textContent = '已复制：' + XATTR_CMD;
+        statusEl.className = 'panel-text panel-status-ok';
+      }
+    } catch (err) {
+      console.error(err);
+    }
   });
   document.getElementById('btn-ax-later')?.addEventListener('click', (e) => {
     e.stopPropagation();
     closeAxGuide(true);
+  });
+  document.getElementById('btn-sponsor-unlock')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    void applySettingsPatch({ sponsorUnlocked: true }).then(() => {
+      const hint = document.getElementById('sponsor-hint');
+      if (hint) hint.textContent = '已解锁打工人猫 / 考研猫，感谢支持！';
+      syncMenuUI();
+    });
   });
   document.getElementById('btn-sponsor-close')?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -654,6 +750,11 @@ async function bootstrap(): Promise<void> {
 
     const breedAttr = target.dataset.breed;
     if (breedAttr) {
+      if (!canUseCat(breedAttr)) {
+        closeContextMenu();
+        openSponsorPanel();
+        return;
+      }
       void applySettingsPatch({ catBreed: breedAttr });
       closeContextMenu();
       return;
@@ -697,6 +798,11 @@ async function bootstrap(): Promise<void> {
         break;
       case 'sponsor':
         openSponsorPanel();
+        break;
+      case 'perm-guide':
+        closeContextMenu();
+        void refreshPermissionGuide(true);
+        openAxGuide();
         break;
       case 'reset-pos':
         void invoke('reset_position');
