@@ -724,6 +724,22 @@ pub mod macos_hook {
         pub key_events_received: u64,
     }
 
+    fn debug_log(msg: &str) {
+        if let Ok(home) = std::env::var("HOME") {
+            let path = std::path::PathBuf::from(home)
+                .join("Library/Application Support/pawtype/hook-debug.log");
+            if let Some(parent) = path.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            use std::io::Write;
+            if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+                let _ = writeln!(f, "{}", msg);
+            }
+        }
+        #[cfg(debug_assertions)]
+        eprintln!("[pawtype] {}", msg);
+    }
+
     fn wall_clock_ms() -> u64 {
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -1286,7 +1302,15 @@ pub mod macos_hook {
             unsafe {
                 let ax_ok = AXIsProcessTrusted();
                 let listen_ok = CGPreflightListenEventAccess();
+                static LAST_PERM_LOG: AtomicU64 = AtomicU64::new(u64::MAX);
+                let perm_bits = (u64::from(ax_ok) << 1) | u64::from(listen_ok);
+                if LAST_PERM_LOG.swap(perm_bits, Ordering::AcqRel) != perm_bits {
+                    debug_log(&format!("permissions ax={} listen={}", ax_ok, listen_ok));
+                }
                 if !ax_ok && !listen_ok {
+                    // Adhoc builds lose TCC after every replace-install (CDHash changes).
+                    // Keep re-prompting so the user can grant the *current* binary.
+                    request_permissions_once();
                     TAP_PORT.store(std::ptr::null_mut(), Ordering::Release);
                     TAP_HAS_KEYBOARD.store(false, Ordering::Release);
                     HID_ACTIVE.store(false, Ordering::Release);
@@ -1349,9 +1373,11 @@ pub mod macos_hook {
                         TAP_PORT.store(std::ptr::null_mut(), Ordering::Release);
                         TAP_HAS_KEYBOARD.store(false, Ordering::Release);
                     }
+                    debug_log(&format!("tap created has_kb={}", tap_has_kb));
                 } else {
                     TAP_PORT.store(std::ptr::null_mut(), Ordering::Release);
                     TAP_HAS_KEYBOARD.store(false, Ordering::Release);
+                    debug_log("tap=null for full and mouse masks");
                 }
 
                 // Channel 2: Non-exclusive read-only IOHIDManager for Keyboard & Keypad.

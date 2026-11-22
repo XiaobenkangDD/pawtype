@@ -6,13 +6,23 @@
 
 ## 📥 下载
 
-最新版 **[v0.1.4](https://github.com/XiaobenkangDD/pawtype/releases/tag/v0.1.4)**：
+最新版 **[v0.1.5](https://github.com/XiaobenkangDD/pawtype/releases/tag/v0.1.5)**：
 
-- Windows 安装包：[`PawType-0.1.4-x64-setup.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.4/PawType-0.1.4-x64-setup.exe)
-- Windows 绿色版：[`PawType-v0.1.4-windows-x64.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.4/PawType-v0.1.4-windows-x64.exe)
-- macOS Universal：[`PawType-v0.1.4-macos-universal.dmg`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.4/PawType-v0.1.4-macos-universal.dmg)
+- Windows 安装包：[`PawType-0.1.5-x64-setup.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.5/PawType-0.1.5-x64-setup.exe)
+- Windows 绿色版：[`PawType-v0.1.5-windows-x64.exe`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.5/PawType-v0.1.5-windows-x64.exe)
+- macOS Universal：[`PawType-v0.1.5-macos-universal.dmg`](https://github.com/XiaobenkangDD/pawtype/releases/download/v0.1.5/PawType-v0.1.5-macos-universal.dmg)
 
 更多文件见 [Releases](https://github.com/XiaobenkangDD/pawtype/releases)。
+
+## 🍎 macOS 权限说明（重要）
+
+正式版为未公证安装包。首次使用以及**每次覆盖更新后**，请确认：
+
+1. **系统设置 → 隐私与安全性 → 输入监控**：添加并打开 `PawType`
+2. **系统设置 → 隐私与安全性 → 辅助功能**：添加并打开 `PawType`
+3. 若开关已开但仍无反应：在列表中选中 `PawType` 点左下角 **-** 删除，再 **+** 重新添加，然后完全退出并重启 App
+4. 打不开时执行：`xattr -cr /Applications/PawType.app`
+5. 菜单栏托盘可点 **「查看键盘监听与权限诊断」** 确认是否生效
 
 ## ✨ 核心特性
 
