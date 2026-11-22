@@ -58,7 +58,7 @@ interface UpdateProgressEvent {
   info: UpdateInfo | null;
 }
 
-let appVersion = '0.1.2';
+let appVersion = '0.1.3';
 let latestUpdateInfo: UpdateInfo | null = null;
 let updateBusy = false;
 let dismissedVersion: string | null = null;

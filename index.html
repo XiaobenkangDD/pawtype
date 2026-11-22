@@ -16,18 +16,18 @@
     </div>
 
     <div id="ax-guide" class="panel-card hidden" role="dialog" aria-labelledby="ax-guide-title">
-      <div class="panel-title" id="ax-guide-title">需要两处系统权限</div>
+      <div class="panel-title" id="ax-guide-title">开启键盘监听权限</div>
       <p class="panel-text">
-        新版 macOS 上，PawType 要同时开启「辅助功能」和「输入监控」，小猫才会跟着键盘动。
+        按原版 KuroCat 的方案：键盘主要依赖「输入监控」；请两处都打开，覆盖安装后建议删掉旧条目再重新添加。
       </p>
       <ol class="panel-steps">
-        <li>打开 <strong>辅助功能</strong>，添加并开启 <strong>PawType</strong></li>
-        <li>打开 <strong>输入监控</strong>，添加并开启 <strong>PawType</strong>（常被漏掉）</li>
-        <li>完全退出后重新打开 App，再敲键盘验证</li>
+        <li>先开 <strong>输入监控</strong>，添加并开启 <strong>PawType</strong>（最关键）</li>
+        <li>再开 <strong>辅助功能</strong>，添加并开启 <strong>PawType</strong></li>
+        <li>完全退出并重新打开；托盘可点「查看键盘监听与权限诊断」</li>
       </ol>
       <div class="panel-actions">
-        <button type="button" class="panel-btn" id="btn-ax-open">打开辅助功能</button>
         <button type="button" class="panel-btn" id="btn-input-monitor-open">打开输入监控</button>
+        <button type="button" class="panel-btn" id="btn-ax-open">打开辅助功能</button>
         <button type="button" class="panel-btn secondary" id="btn-ax-later">稍后</button>
       </div>
     </div>
@@ -130,7 +130,7 @@
       </button>
       <button class="menu-item" data-action="check-update" id="btn-check-update">
         <span>检查更新</span>
-        <span class="menu-hint" id="update-hint">v0.1.2</span>
+        <span class="menu-hint" id="update-hint">v0.1.3</span>
       </button>
       <button class="menu-item" data-action="sponsor">
         <span>赞助作者（微信）</span>

@@ -231,32 +231,71 @@ fn quit_app(app: AppHandle) {
 
 #[tauri::command]
 fn is_accessibility_trusted() -> bool {
-    input_hook::is_accessibility_trusted()
+    #[cfg(target_os = "macos")]
+    {
+        input_hook::macos_hook::get_macos_input_status().accessibility
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
 }
 
 #[tauri::command]
 fn has_listen_event_access() -> bool {
-    input_hook::has_listen_event_access()
+    #[cfg(target_os = "macos")]
+    {
+        input_hook::macos_hook::get_macos_input_status().input_monitoring
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
 }
 
 #[tauri::command]
 fn open_accessibility_settings() {
-    input_hook::open_accessibility_settings();
+    #[cfg(target_os = "macos")]
+    {
+        input_hook::macos_hook::open_macos_privacy_pane("accessibility");
+    }
 }
 
 #[tauri::command]
 fn open_input_monitoring_settings() {
-    input_hook::open_input_monitoring_settings();
+    #[cfg(target_os = "macos")]
+    {
+        input_hook::macos_hook::open_macos_privacy_pane("input_monitoring");
+    }
 }
 
 #[tauri::command]
 fn prompt_accessibility_permission() -> bool {
-    input_hook::prompt_accessibility_permission()
+    #[cfg(target_os = "macos")]
+    {
+        // Upstream no longer hard-gates on AX; still open the pane & reconnect hooks.
+        input_hook::macos_hook::open_macos_privacy_pane("accessibility");
+        input_hook::macos_hook::trigger_macos_reconnect();
+        input_hook::macos_hook::get_macos_input_status().accessibility
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
 }
 
 #[tauri::command]
 fn prompt_listen_event_access() -> bool {
-    input_hook::request_listen_event_access()
+    #[cfg(target_os = "macos")]
+    {
+        input_hook::macos_hook::open_macos_privacy_pane("input_monitoring");
+        input_hook::macos_hook::trigger_macos_reconnect();
+        input_hook::macos_hook::get_macos_input_status().input_monitoring
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
 }
 
 pub fn apply_breed_and_save(app: &AppHandle, breed: &str) {

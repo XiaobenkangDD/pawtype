@@ -108,6 +108,51 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
     #[cfg(windows)]
     let desktop_shortcut =
         MenuItem::with_id(app, "desktop_shortcut", "创建桌面快捷方式 (PawType)", true, None::<&str>)?;
+    #[cfg(target_os = "macos")]
+    let mac_input_menu = {
+        let mac_reconnect = MenuItem::with_id(
+            app,
+            "mac_reconnect_input",
+            "重新连接键盘监听（兼容 Karabiner）",
+            true,
+            None::<&str>,
+        )?;
+        let mac_diag = MenuItem::with_id(
+            app,
+            "mac_diagnose_input",
+            "查看键盘监听与权限诊断",
+            true,
+            None::<&str>,
+        )?;
+        let mac_sep = PredefinedMenuItem::separator(app)?;
+        let mac_open_listen = MenuItem::with_id(
+            app,
+            "mac_open_input_monitoring",
+            "打开「输入监控」隐私设置",
+            true,
+            None::<&str>,
+        )?;
+        let mac_open_ax = MenuItem::with_id(
+            app,
+            "mac_open_accessibility",
+            "打开「辅助功能」隐私设置",
+            true,
+            None::<&str>,
+        )?;
+        Submenu::with_items(
+            app,
+            "键盘监听与权限",
+            true,
+            &[
+                &mac_reconnect,
+                &mac_diag,
+                &mac_sep,
+                &mac_open_listen,
+                &mac_open_ax,
+            ],
+        )?
+    };
+
     let check_update = MenuItem::with_id(
         app,
         "check_update",
@@ -161,6 +206,7 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
             &reset_pos,
             &autostart,
             &mcp_toggle,
+            &mac_input_menu,
             &check_update,
             &sponsor,
             &sep2,
@@ -278,6 +324,22 @@ pub fn setup_tray(app: &AppHandle, initial: &AppSettings) -> tauri::Result<()> {
                 "kb_viewer" => apply_keyboard_orientation_and_save(app, "viewer"),
                 "desktop_shortcut" => {
                     let _ = crate::config::create_desktop_shortcut();
+                }
+                #[cfg(target_os = "macos")]
+                "mac_reconnect_input" => {
+                    crate::input_hook::macos_hook::trigger_macos_reconnect();
+                }
+                #[cfg(target_os = "macos")]
+                "mac_diagnose_input" => {
+                    crate::input_hook::macos_hook::show_macos_diagnostics_dialog();
+                }
+                #[cfg(target_os = "macos")]
+                "mac_open_input_monitoring" => {
+                    crate::input_hook::macos_hook::open_macos_privacy_pane("input_monitoring");
+                }
+                #[cfg(target_os = "macos")]
+                "mac_open_accessibility" => {
+                    crate::input_hook::macos_hook::open_macos_privacy_pane("accessibility");
                 }
                 "check_update" => {
                     let app_clone = app.clone();
